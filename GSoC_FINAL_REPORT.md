@@ -27,9 +27,13 @@ share of the code other contributors added.
   reported were fixed and closed.
 - **Upstream impact:** a Niivue issue (#314) I filed led to the loading events
   I asked for being implemented in master.
-- **Project direction:** two things reset the priorities mid-project. New users
-  were preparing to QC the PPMI dataset, which made the app's reliability for
-  real review sessions and the review of incoming PRs the urgent work; and the
+- **Validated by real use:** new users ran QC on the PPMI dataset on October 7–9,
+  2026, successfully. Making the application dependable for sessions like that
+  one, and reviewing the PRs that changed the paths they depended on, was the
+  work the project most needed from me.
+- **Project direction:** two things reset the priorities mid-project. The PPMI
+  onboarding made the app's reliability for real review sessions and the review
+  of incoming PRs the urgent work; and the
   infrastructure needed to experiment with open-weight models was not available,
   so the AI panel could not progress past the sandbox. Full Nipoppy
   `DatasetLayout` and manifest integration, production outlier detection, and the
@@ -72,6 +76,13 @@ became a priority in its own right, since a defect merged into the save or
 resume path would reach real raters working on a real dataset. That is why
 implementation, code review, regression testing, and browser-test infrastructure
 became the largest share of my work.
+
+Those sessions ran on October 7–9, 2026, and they went successfully. That is the
+clearest measure I have of whether this shift was the right one: the application
+held up for real raters on a real dataset. The timing also shows how close the
+margin was. I retested the multifacet ratings work on October 6, covering task
+switching and wrong-task checkpoint uploads, and that PR merged on October 8,
+in the middle of the QC window.
 
 **The compute for open-weight models was not there.** The AI deliverable assumed
 I could experiment with open-weight models locally. In practice the
@@ -415,7 +426,12 @@ Two related reports: [#101](https://github.com/nipoppy/qc-studio/issues/101)
 [#112](https://github.com/nipoppy/qc-studio/issues/112) (overwrite warning
 versus retained export rows, open).
 
-This work informed the Playwright framework: notes persistence and
+Reviewing #95 and #83 mattered on a schedule, not just in principle. Both
+changed the save, checkpoint, and resume paths, and the PPMI QC sessions on
+October 7–9 depended on those paths; #95 merged on October 8, after I retested
+task switching and wrong-task checkpoint uploads on October 6.
+
+This work also informed the Playwright framework: notes persistence and
 autoplay/notes interaction have tests, while save/resume and filtered completion
 remain candidates.
 
@@ -483,7 +499,7 @@ evaluation are natural follow-ons to the IQM viewer and evidence-bundle work.
   as of October 12, 2026. It is not an estimate of hours and does not claim that
   every item fell within the official GSoC coding period.
 - The original proposal summary, the account of the review of #20, the PPMI
-  onboarding that reset the priorities, and the hardware limits on open-weight
+  onboarding and its October 7–9 outcome, and the hardware limits on open-weight
   model experiments come from me rather than the repository record.  On #20 specifically: I spent substantial time reviewing it but did not submit
   the feedback publicly, so no individual findings are attributed; the PR is
   merged and the pagination code is credited to its author.
