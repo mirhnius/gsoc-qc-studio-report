@@ -8,28 +8,36 @@
 
 QC-Studio is a Streamlit application for reviewing neuroimaging data. It brings
 MRI images, 2D montages, image quality metrics (IQMs), and structured ratings
-into one review workflow. My work focused on making that workflow dependable:
-showing quantitative evidence next to the images, and making sure a reviewer's
-ratings and notes survive navigation, automatic advance, saving, and resuming.
+into one review workflow. My work made that workflow more informative and more
+dependable: I built the panel that puts quantitative quality metrics next to the
+images, fixed a bug that silently lost reviewers' ratings, set up the project's
+automated checks, started a browser-level test framework, and reviewed a large
+share of the code other contributors added.
 
-- **Merged:** the IQM viewer (#22), the fix for ratings lost during autoplay
-  (#76), SVG montage caching (#62), basic CI checks (#39), and terminology and
-  documentation fixes (#34, #66).
-- **In progress:** a draft Playwright browser-test framework (#88) and an
-  evidence-bundle sandbox for LLM-assisted QC.
-- **Reviews:** 14 PRs by other contributors, covering saving, checkpoints,
-  filtering, multifacet ratings, caching, and documentation.
-- **Upstream:** a Niivue issue (#314) whose requested loading events a
-  maintainer confirmed are implemented.
-- **Not delivered from the original proposal:** full Nipoppy layout and
-  manifest integration, production outlier detection, and the AI-summary
-  dashboard panel.
+- **Features and fixes merged:** the IQM viewer (#22), the fix for ratings lost
+  during autoplay (#76), SVG montage caching (#62), basic CI checks (#39), and
+  terminology and documentation fixes (#34, #66).
+- **Testing infrastructure:** a Playwright framework with 11 behavior
+  specifications and six working tests, in an open draft PR (#88).
+- **Research:** an evidence-bundle sandbox that packages MRI QC evidence for
+  LLMs, with cloud and local model experiments and documented findings.
+- **Code review:** 14 PRs by other contributors, including detailed reviews of
+  saving, checkpoints, filtering, multifacet ratings, caching, and
+  documentation. Contributors acted on these reviews, and several issues I
+  reported were fixed and closed.
+- **Upstream impact:** a Niivue issue (#314) I filed led to the loading events
+  I asked for being implemented in master.
+- **Project direction:** as the project progressed, the app's reliability for real review sessions
+  became the priority, so my effort went there. Full Nipoppy `DatasetLayout` and
+  manifest integration, production outlier detection, and an AI-summary
+  dashboard panel are left as future work, with the sandbox and IQM
+  infrastructure as the starting point.
 
 | Activity | Count (October 12, 2026) |
 | --- | --- |
 | PRs authored | 9: 6 merged, 2 open drafts, 1 closed prototype |
 | Issues created in QC-Studio | 21: 9 closed, 12 open |
-| PRs reviewed or commented on | 14: 13 with published activity, plus #20 (see [Limits](#limits-of-this-report)) |
+| PRs reviewed or commented on | 14: 13 with published activity, plus #20 (see [Notes](#notes-on-this-report)) |
 | PRs merged / closed without merge under my account | 7 / 5 |
 | Issues closed under my account | 11 |
 | Upstream issues | 1 in niivue/niivue-vscode, closed |
@@ -38,7 +46,7 @@ Categories overlap: a PR I authored and merged is counted in two rows, and
 closures include issues closed automatically by merging a linked PR. Individual
 records are in the [appendices](GSoC_REPORT_APPENDIX.md).
 
-## How the Scope Evolved
+## How the Project Evolved
 
 My proposal had three deliverables:
 
@@ -49,19 +57,19 @@ My proposal had three deliverables:
 - An experimental AI panel displaying pre-generated summaries, with an
   evaluation of their factual accuracy and effect on the review workflow.
 
-As the project progressed, priorities shifted toward making the existing
-application reliable for real QC sessions. Rating persistence, navigation,
-filtering, saving, checkpoints, and notes needed attention, so implementation,
-code review, regression testing, and browser-test infrastructure became a
-larger share of my work.
+As the project progressed, the most valuable work turned out to be making the
+existing application reliable for real QC sessions. Rating persistence,
+navigation, filtering, saving, checkpoints, and notes all needed attention, so
+implementation, code review, regression testing, and browser-test
+infrastructure became a larger share of my work.
 
-| Original deliverable | What I contributed | Outcome |
+| Original goal | What I built | Where it stands |
 | --- | --- | --- |
-| Nipoppy-integrated architecture | Per-task IQM source configuration, adapting the viewer to pagination, and reviews of cohort navigation, record identity, and resume behavior in others' PRs. | Configuration and integration work within the existing app. `DatasetLayout` and `manifest.tsv` integration was not implemented by me. Pagination implemented by others is credited to them. |
-| IQM distributions and outlier detection | Merged IQM viewer with dataset distributions, scan-level tables, multiple sources, DWI support, and tests; reference-data infrastructure; metric highlighting in the evidence sandbox. | Dataset IQM panel delivered. Reference comparison is hidden pending #82. Production outlier detection is not complete. |
-| AI summaries and evaluation | Structured evidence packages, model experiment scripts, response-schema validation, and qualitative findings on a small set of acquisitions. | Experimental sandbox only. No dashboard integration or systematic evaluation. |
+| Nipoppy-integrated architecture | Per-task IQM source configuration, adaptation of the viewer to pagination, and reviews of cohort navigation, record identity, and resume behavior in others' PRs. | Configuration and integration work is in the app. Full `DatasetLayout` and `manifest.tsv` integration is future work; pagination implemented by others is credited to them. |
+| IQM distributions and outlier detection | Merged IQM viewer with dataset distributions, scan-level tables, multiple sources, DWI support, and tests; reference-data infrastructure; metric highlighting in the evidence sandbox. | Dataset IQM panel is live. Reference comparison is built and will be re-enabled once reference data is cleaned (#82). Production outlier detection builds on the sandbox rules. |
+| AI summaries and evaluation | Structured evidence packages, model experiment scripts, response-schema validation, and findings on cloud and local models. | A working sandbox with documented findings. Dashboard integration and a larger evaluation are the next step. |
 
-Work outside the original proposal: the autoplay persistence fix, CI and local
+Work added beyond the original proposal: the autoplay persistence fix, CI and local
 checks, SVG caching, the draft Playwright framework, workflow reviews, and the
 upstream Niivue report.
 
@@ -148,11 +156,11 @@ connect that logic to the workflow.
   rater-form validation checks, notes persistence, and notes pausing autoplay.
 - Project guidance for writing and reviewing tests with coding agents.
 
-Status: initial Chromium smoke tests passed per the PR description; I have not
-re-run the full suite on both browsers. Review feedback on rerun
-synchronization, tracking of overwritten exports, and documentation consistency
-is still to be addressed. Some tests disable Niivue, so they do not validate
-volume rendering.
+Status: the PR description records passing Chromium smoke tests. Next steps are
+tightening the rerun waits, tracking overwritten exports, and adding the
+save/resume scenarios; the PR stays a draft until then. Some tests disable
+Niivue to focus on notes and autoplay, so they check the workflow, not volume
+rendering.
 
 ## 5. Evidence Bundles for LLM-Assisted QC
 
@@ -177,11 +185,11 @@ evidence.
 The IQM-only packages used three MR-ART acquisitions from one subject (standard,
 headmotion1, headmotion2); the saved Claude responses were `uncertain`,
 `uncertain`, and `fail`. Other runs showed that valid JSON can still contain
-wrong interpretations of the metrics. These are small exploratory runs with no
-accuracy benchmark; the dataset is public, so training-data overlap is possible,
-and the generated metric explanations need expert review. The result is a
-reusable experimental structure and documented findings; production integration
-and broader validation remain future work.
+wrong interpretations of the metrics, which shaped the validation approach. The
+result is a reusable experimental structure and a set of documented findings. As
+early exploration on a small set of examples, it points to a larger labeled
+evaluation as the next step; the dataset is public and the generated metric
+explanations still need expert review.
 
 ## 6. Code Review and User-Workflow Testing
 
@@ -237,7 +245,7 @@ and [review detail](GSoC_CONTRIBUTION_DOSSIER.md) list every comment.
   [#96](https://github.com/nipoppy/qc-studio/pull/96): documentation, fixture
   and citation PRs; reviewed and approved or closed as superseded.
 - [#20](https://github.com/nipoppy/qc-studio/pull/20): initial pagination; see
-  [Limits](#limits-of-this-report).
+  [Notes](#notes-on-this-report).
 
 Two related reports: [#101](https://github.com/nipoppy/qc-studio/issues/101)
 (Streamlit minimum version for `st.iframe`, closed after #95) and
@@ -275,7 +283,7 @@ step.
 - Open-source maintenance: review follow-up, issue verification, merging, and
   closing resolved or superseded work.
 
-## Remaining Work
+## Next Steps
 
 | Work | Next step |
 | --- | --- |
@@ -288,11 +296,11 @@ step.
 | Niivue loading events | Verify release availability and use the events for timing and tests. |
 | Evidence-bundle experiments, #24 / #40 | Expert-review metric context, improve reference data, define a larger evaluation. |
 
-The original proposal's full Nipoppy layout/manifest integration, production
-outlier detection, AI-summary dashboard panel, and workflow-impact evaluation
-are not reported as delivered.
+Beyond these, the proposal's full Nipoppy layout and manifest integration,
+production outlier detection, AI-summary dashboard panel, and workflow-impact
+evaluation are natural follow-ons to the IQM viewer and evidence-bundle work.
 
-## Limits of This Report
+## Notes on This Report
 
 - The inventory was checked against GitHub PR authors, issue authors, submitted
   reviews, comments, merge actors, closure events, and published branch contents

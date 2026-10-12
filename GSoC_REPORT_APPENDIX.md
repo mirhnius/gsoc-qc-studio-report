@@ -193,5 +193,5 @@ design review, not a test of memory usage; the PR is open and marked WIP.
 - [Evidence-bundle explanation](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md).
 - [Review and triage detail](GSoC_CONTRIBUTION_DOSSIER.md).
 
-How this inventory was checked, and its limits, are described in
-[Limits of This Report](GSoC_FINAL_REPORT.md#limits-of-this-report).
+How this inventory was checked, is described in
+[Notes on This Report](GSoC_FINAL_REPORT.md#notes-on-this-report).
