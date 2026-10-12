@@ -191,12 +191,7 @@ design review, not a test of memory usage; the PR is open and marked WIP.
 - [IQM explanation](IQM_VIEWER_BRANCH_EXPLANATION.md).
 - [Playwright explanation](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md).
 - [Evidence-bundle explanation](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md).
-- [Full contribution dossier](GSoC_CONTRIBUTION_DOSSIER.md).
+- [Review and triage detail](GSoC_CONTRIBUTION_DOSSIER.md).
 
-The contribution inventory was checked against GitHub PR authors, issue authors,
-submitted reviews, comments, merge actors, closure events, and published branch
-contents. The original proposal summary was supplied by the contributor during
-report preparation, as was the account of substantial review work on #20 whose
-feedback was not publicly submitted. Activity totals combine that account with
-the repository record available on October 12, 2026; they are not an estimate of
-hours or a claim that every item occurred within the official GSoC coding period.
+How this inventory was checked, and its limits, are described in
+[Limits of This Report](GSoC_FINAL_REPORT.md#limits-of-this-report).
