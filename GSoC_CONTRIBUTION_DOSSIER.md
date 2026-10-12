@@ -1,6 +1,6 @@
 # Google Summer of Code Contribution Dossier: QC-Studio
 
-As of: October 10, 2026  
+As of: October 12, 2026  
 Repository: `nipoppy/qc-studio`  
 GitHub account: `mirhnius` / Niusha
 
@@ -40,8 +40,8 @@ areas are:
 - Issues created: 21 total
   - 9 closed: #11, #23, #33, #35, #68, #73, #81, #84, #101
   - 12 open: #24, #40, #41, #69, #70, #71, #72, #75, #77, #78, #82, #112
-- External PR review/comment contributions: 13
-  - Published reviews/comments on 12 PRs: #10, #17, #25, #38, #53, #58, #67, #74, #83, #95, #96, #105
+- External PR review/comment contributions: 14
+  - Published reviews/comments on 13 PRs: #10, #17, #25, #38, #53, #58, #67, #74, #83, #95, #96, #105, #111
   - Review work on merged #20 without public submission: substantial time spent
     reviewing, based on my account of the work and the recorded review entry.
 - Upstream dependency issue reported: niivue/niivue-vscode#314
@@ -136,6 +136,9 @@ Highlights:
 - Reviewed #95 with multiple concrete code-level findings in multifacet rating
   behavior, followed up on filename/checkpoint/path edge cases, then retested
   task switching and wrong-task checkpoints before approving.
+- Reviewed #111 memory-optimization caching design: inconsistent cache styles
+  and invalidation rules, and a shared cached dict that is read-only only by
+  convention. The author's later commit responds to the review.
 - Reviewed #105 documentation-site structure and onboarding; verified a strict
   Sphinx build and demo, and raised startup, CI, pre-commit, and filename issues.
 - Reviewed #83 save/export/checkpoint/resume work and found user-facing and
@@ -797,6 +800,10 @@ Review contribution, submitted October 10:
 - Identified missing README references and enabled but unused Sphinx extensions.
 - Inline comments identified a stray backtick and inconsistent saved-filename
   examples between upload and saving instructions; noted CSV and TSV support.
+- On October 11, asked for the PyBIDS mention to be removed from the
+  session-list docs, because #111 removes PyBIDS-based session guessing and
+  `--session_list` becomes required unless the participant TSV has a
+  `session_id` column.
 - Explicitly limited the review to structural checks, not a cover-to-cover
   documentation audit. The PR remains open; these are review findings, not
   implementation changes attributed to me.
@@ -805,6 +812,28 @@ Evidence:
 
 - [Submitted review](https://github.com/nipoppy/qc-studio/pull/105#pullrequestreview-5480252267).
 - [Filename consistency comment](https://github.com/nipoppy/qc-studio/pull/105#discussion_r4238816575).
+
+### #111: [WIP] Memory optimization
+
+Link: https://github.com/nipoppy/qc-studio/pull/111  
+Author: `nikhil153`  
+State: open
+
+Review contribution, submitted October 11:
+
+- Pointed out two caching styles in `qc_viewer.py` and
+  `niivue_viewer_manager.py` and suggested a small shared module for limits, key
+  rules, and documentation.
+- Noted that the NIfTI cache key includes `mtime_ns` and size, while
+  `_load_montage_data_cached` is keyed only on paths and configuration, so a
+  regenerated montage could stay stale until evicted.
+- Noted that `cache_resource` returns the same dict to every session and that
+  read-only use was enforced only by a docstring; suggested an immutable return
+  type or a test that fails on mutation.
+- The author's later commit, "added shared cache module and decoupled
+  load_montage_data to address PR comments", responds to this review. The
+  implementation is credited to the author.
+- [Submitted review](https://github.com/nipoppy/qc-studio/pull/111#pullrequestreview-5481379082).
 
 ## Issue Triage / Issue Discussion Contributions
 
@@ -923,50 +952,3 @@ Representative local commit topics authored by Niusha include:
 - Documentation link fixes.
 - CI/pre-commit/test gate work.
 - Evidence bundle experiments and LLaVA/LLM QC exploration.
-
-## GSoC Report Framing
-
-A concise framing for the final report:
-
-> My GSoC contribution focused on making QC-Studio more reliable for real QC
-> workflows. I implemented fixes and infrastructure around rating persistence,
-> IQM visualization, SVG/montage performance, documentation, CI, and e2e
-> testing. In parallel, I created and triaged issues, reviewed PRs from other
-> contributors, and caught several workflow bugs involving saving, checkpoints,
-> filters, autoplay, completion logic, multifacet ratings, and export paths.
-
-Stronger version:
-
-> I contributed across both implementation and project quality: feature work in
-> IQM visualization and montage handling, bug fixes for play-mode rating
-> persistence, testing/CI infrastructure, a spec-driven Playwright e2e scaffold
-> for Streamlit workflows, and detailed code review/triage that identified
-> user-facing data-loss and workflow edge cases before release.
-
-## Good Evidence to Mention
-
-- Nikhil explicitly said the PR review comments were useful and hard to catch
-  with tests.
-- #95 shows mature code review: concrete failure modes, affected files,
-  reproduction reasoning, suggested fixes/tests, and retesting before approval.
-- #105 shows documentation review beyond prose: startup behavior, strict builds,
-  CI isolation, hook scope, and consistency with CLI/export behavior.
-- #83 shows user-workflow testing and UX review around save/checkpoint/export.
-- #74 and #25 show early ability to catch completion/resume/filter bugs in
-  other contributors' PRs.
-- #88 shows independent technical growth: learning Playwright/Streamlit e2e
-  patterns and building reusable test infrastructure.
-
-## Near-Finish-Line Priorities
-
-If there is still time before final submission, the highest-value next steps are:
-
-1. Finish or narrow #88 so it is mergeable, even if the agent/skills part is
-   split out from the e2e framework.
-2. Add one or two high-value e2e tests around real workflow bugs:
-   save/checkpoint, upload/resume, or filtered completion/autoplay.
-3. Follow up on open documentation review #105 and export semantics issue #112.
-   Multifacet ratings #95 is now merged after review and retesting; any remaining
-   notes or missing-image feedback can be tracked separately if still relevant.
-4. Close or update stale issues you created so the final report can say which
-   items landed, which remain future work, and why.

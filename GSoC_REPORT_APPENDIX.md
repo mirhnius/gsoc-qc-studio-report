@@ -1,7 +1,7 @@
 # QC-Studio GSoC Report: Appendices
 
 **Contributor:** Niusha ([mirhnius](https://github.com/mirhnius))  
-**Contribution status checked:** October 10, 2026
+**Contribution status checked:** October 12, 2026
 
 These appendices contain the detailed contribution records supporting the
 [GSoC Final Report](GSoC_FINAL_REPORT.md). Review work and maintenance are
@@ -69,11 +69,12 @@ described in [Section 7 of the main report](GSoC_FINAL_REPORT.md#7-upstream-niiv
 | [#53](https://github.com/nipoppy/qc-studio/pull/53), `SRSteinkamp` | Keyboard controls and narrow-screen layout. | Raised notes-field shortcut conflicts, Play/Pause coverage, and wrapped button labels. |
 | [#58](https://github.com/nipoppy/qc-studio/pull/58), `manonheff` | Review-duration statistics and plots. | Requested tests, questioned duration correctness, and suggested average-per-subject and grouped-histogram presentation. |
 | [#67](https://github.com/nipoppy/qc-studio/pull/67), `nikhil153` | Documentation cleanup. | Reviewed, approved, and merged. |
-| [#74](https://github.com/nipoppy/qc-studio/pull/74), `GhazalehManj` | Sidebar filtering, navigation, compact labels, and autoplay completion. | Identified filter/completion problems, shared-helper placement, session assumptions, and configuration concerns. |
+| [#74](https://github.com/nipoppy/qc-studio/pull/74), `GhazalehManj` | Sidebar filtering, navigation, compact labels, and autoplay completion. | Identified filter/completion problems, shared-helper placement, session assumptions, and configuration concerns; approved after the congratulations-page bug and other comments were addressed. |
 | [#83](https://github.com/nipoppy/qc-studio/pull/83), `nikhil153` | Export, checkpoint, upload/resume, filenames, counts, and notes. | Reported path/case mismatches, subject-ID preservation, misleading labels, checkpoint confusion, and autoplay notes behavior. |
 | [#95](https://github.com/nipoppy/qc-studio/pull/95), `nikhil153` | Cohort helpers, session manager, rating widgets, checkpoint lookup, task navigation, filenames, and wildcard paths. | Identified persistence and identity problems; followed up on casing, identifier parsing, and checkpoint/path edge cases; retested task switching and wrong-task checkpoints, then approved. Merged October 8. |
 | [#96](https://github.com/nipoppy/qc-studio/pull/96), `nikhil153` | Citation metadata. | Reviewed and approved. Merged October 8. |
-| [#105](https://github.com/nipoppy/qc-studio/pull/105), `michellewang` | Sphinx docs, README/Quickstart, CLI and export conventions, CI, and pre-commit scope. | Verified a strict docs build and demo; reported startup failures and filename inconsistencies; suggested independent docs checks and limiting hooks on sample data. Open. |
+| [#105](https://github.com/nipoppy/qc-studio/pull/105), `michellewang` | Sphinx docs, README/Quickstart, CLI and export conventions, CI, and pre-commit scope. | Verified a strict docs build and demo; reported startup failures and filename inconsistencies; suggested independent docs checks and limiting hooks on sample data. On October 11, asked for the PyBIDS mention to be removed from the session-list docs, since #111 removes PyBIDS session guessing. Open. |
+| [#111](https://github.com/nipoppy/qc-studio/pull/111), `nikhil153` | NIfTI and montage caching for memory use, and removal of PyBIDS-based session guessing. | Submitted a review on October 11 with three design points: two caching styles in two modules, different invalidation rules, and a shared cached dict that is read-only only by convention. The author's later commit, "added shared cache module and decoupled load_montage_data to address PR comments", responds to it. Open. |
 
 These rows credit my review or maintenance role. The implementations in PRs by
 `GhazalehManj` and other contributors belong to their respective authors.
@@ -116,6 +117,15 @@ pre-commit scope affecting sample data. Other findings included access to built
 HTML, saved-filename inconsistencies, missing references, and unused Sphinx
 extensions. This was a structural review, not a cover-to-cover audit; the PR
 remains open.
+
+For #111, my October 11
+[submitted review](https://github.com/nipoppy/qc-studio/pull/111#pullrequestreview-5481379082)
+compared the two caches added by the PR. The NIfTI cache key includes file
+modification time and size, but the montage cache is keyed only on paths and
+configuration, so a regenerated figure could remain stale until evicted. I also
+asked for a shared module for limits and key rules, and for an immutable return
+value or a test guarding against mutation of the shared cached dict. This was a
+design review, not a test of memory usage; the PR is open and marked WIP.
 
 ## Appendix D: Merge and Closure Activity
 
@@ -188,5 +198,5 @@ submitted reviews, comments, merge actors, closure events, and published branch
 contents. The original proposal summary was supplied by the contributor during
 report preparation, as was the account of substantial review work on #20 whose
 feedback was not publicly submitted. Activity totals combine that account with
-the repository record available on October 10, 2026; they are not an estimate of
+the repository record available on October 12, 2026; they are not an estimate of
 hours or a claim that every item occurred within the official GSoC coding period.

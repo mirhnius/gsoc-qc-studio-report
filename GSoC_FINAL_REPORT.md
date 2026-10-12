@@ -2,11 +2,23 @@
 
 **Contributor:** Niusha ([mirhnius](https://github.com/mirhnius))  
 **Project:** [QC-Studio](https://github.com/nipoppy/qc-studio)  
-**Status:** Near-final draft, with contribution status checked on October 10, 2026
+**Status:** Contribution status checked on October 12, 2026
 
-This report covers my recorded contributions to QC-Studio through October 10,
-including early exploratory work. Open work is described at its current stage;
-the report can be updated as the remaining PRs are completed before submission.
+This report covers my recorded contributions to QC-Studio through October 12,
+including early exploratory work. Open work is described at its current stage.
+
+## Summary
+
+- **Delivered and merged:** the IQM viewer (#22), the fix for ratings lost
+  during autoplay (#76), SVG montage caching (#62), basic CI checks (#39),
+  and terminology and documentation fixes (#34, #66).
+- **In progress:** a draft Playwright browser-test framework (#88) and an
+  evidence-bundle sandbox for LLM-assisted QC.
+- **Reviews:** 14 PRs by other contributors, covering saving, checkpoints,
+  filtering, multifacet ratings, caching, and documentation.
+- **Not delivered from the original proposal:** full Nipoppy layout and
+  manifest integration, production outlier detection, and the AI-summary
+  dashboard panel.
 
 ## Project Overview
 
@@ -99,7 +111,7 @@ agree. [GSoC planning guidance](https://google.github.io/gsocguides/mentor/manag
 | Feature development | IQM viewer in #22, including per-task sources, plots, and tests. | Bring quantitative evidence into the same application as visual review. |
 | Reliability and performance | Rating-persistence fix in #76 and SVG caching in #62. | Preserve a reviewer's decision during automatic advance and avoid repeated montage loading. |
 | Testing infrastructure | Basic checks in #39 and the draft Playwright framework in #88. | Check code changes consistently and make browser workflows repeatable to test. |
-| Code review and collaboration | Findings on record identity, saving, filtering, and completion in #25, #74, #83, and #95; documentation and onboarding review in #105. | Check full-session behavior, retest fixes, and verify that setup instructions and development checks support new users and contributors. |
+| Code review and collaboration | Findings on record identity, saving, filtering, and completion in #25, #74, #83, and #95; caching design review in #111; documentation and onboarding review in #105. | Check full-session behavior, retest fixes, and verify that setup instructions and development checks support new users and contributors. |
 | Research and upstream investigation | Evidence-bundle sandbox and Niivue issue #314. | Explore structured QC assistance and identify dependency support needed for correct viewer timing. |
 
 A concrete example of this connection is the autoplay rating bug: I reported
@@ -111,11 +123,11 @@ to the human review application.
 
 ## Contribution Snapshot
 
-| Activity | Status checked on October 10, 2026 |
+| Activity | Status checked on October 12, 2026 |
 | --- | --- |
 | PRs authored by my account | 9: 6 merged, 2 open drafts, 1 closed prototype |
 | Issues created in QC-Studio | 21: 9 closed, 12 open |
-| Review or comment contributions on others' PRs | 13 PRs: 12 with published activity, plus review work on merged PR #20 without public submission |
+| Review or comment contributions on others' PRs | 14 PRs: 13 with published activity, plus review work on merged PR #20 without public submission |
 | PR merges recorded under my account | 7 |
 | PRs closed without merging under my account | 5 |
 | Issue closures recorded under my account | 11 |
@@ -297,7 +309,8 @@ possible, I retested the fixes before approval.
 | [#83](https://github.com/nipoppy/qc-studio/pull/83): saving and checkpoints | Reported filename/path inconsistencies, checkpoint confusion, altered leading-zero subject IDs, lost autoplay notes, and page counts mislabeled as QC records. | Review feedback contributed to the save/resume work; merged. |
 | [#95](https://github.com/nipoppy/qc-studio/pull/95): multifacet ratings | Identified saved-rating masking, facet identity changes, checkpoint boundaries, stale task navigation, aggregate labels, filename parsing/casing, and wildcard-path handling. | Retested task switching and wrong-task checkpoints, then approved; merged October 8. |
 | [#96](https://github.com/nipoppy/qc-studio/pull/96): citation metadata | Reviewed and approved the citation information. | Merged. |
-| [#105](https://github.com/nipoppy/qc-studio/pull/105): documentation website | Verified a strict Sphinx build, demo startup, CLI flags, and export columns. Flagged README startup failures, CI coupling, pre-commit scope, filename inconsistencies, and documentation references. | Open; structural review submitted. |
+| [#105](https://github.com/nipoppy/qc-studio/pull/105): documentation website | Verified a strict Sphinx build, demo startup, CLI flags, and export columns. Flagged README startup failures, CI coupling, pre-commit scope, filename inconsistencies, and documentation references. On October 11, asked for the PyBIDS mention to be removed from the session-list docs, since #111 removes PyBIDS session guessing. | Open; structural review and follow-up comment submitted. |
+| [#111](https://github.com/nipoppy/qc-studio/pull/111): memory optimization | Reviewed the NIfTI and montage caches and raised three design points: two caching styles in two modules, different invalidation rules (the NIfTI key includes file mtime and size, the montage key does not), and a shared cached dict that callers are only asked in a docstring not to mutate. | Open; review submitted October 11. A later commit by the author, "added shared cache module and decoupled load_montage_data to address PR comments", responds to the review. |
 
 The common thread was following a decision through the whole review session,
 rather than checking a control in isolation. This work also informed the
@@ -376,8 +389,6 @@ evaluation. These are not reported as delivered. Their place in the final
 handoff depends on the revised scope agreed with the mentor; they should not
 automatically be treated as additional commitments for the remaining period.
 
-Before submitting the final report, I will refresh the status of open work and
-add any final test results or merged PRs, together with the agreed scope changes.
 The remaining issues already provide entry points for follow-up development.
 
 ## Acknowledgements
@@ -400,5 +411,5 @@ submitted reviews, comments, merge actors, closure events, and published branch
 contents. The original proposal summary was supplied by the contributor during
 report preparation, as was the account of substantial review work on #20 whose
 feedback was not publicly submitted. Activity totals combine that account with
-the repository record available on October 10, 2026; they are not an estimate of
+the repository record available on October 12, 2026; they are not an estimate of
 hours or a claim that every item occurred within the official GSoC coding period.
