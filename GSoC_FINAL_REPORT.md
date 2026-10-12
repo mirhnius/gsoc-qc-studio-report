@@ -73,94 +73,210 @@ Work added beyond the original proposal: the autoplay persistence fix, CI and lo
 checks, SVG caching, the draft Playwright framework, workflow reviews, and the
 upstream Niivue report.
 
-## 1. IQM Viewer
+## 1. IQM Viewer: From a Metric Dropdown to a Per-Task Panel
 
 **Delivered:** [PR #22](https://github.com/nipoppy/qc-studio/pull/22), merged
-September 10, 2026. Related: [#12](https://github.com/nipoppy/qc-studio/issues/12),
+September 10, 2026, after 45 commits across 112 files. Related:
+[#12](https://github.com/nipoppy/qc-studio/issues/12),
 [#23](https://github.com/nipoppy/qc-studio/issues/23).
 Details: [IQM Viewer Branch](IQM_VIEWER_BRANCH_EXPLANATION.md).
 
-The IQM panel lets reviewers inspect quantitative measurements alongside the
-images they are rating. It began with MRIQC reference distributions and became a
-more general viewer after feedback and the pagination refactor.
+Reviewers could see images but not the numbers MRIQC produces for them. Issue
+#12 asked for IQM distributions with MRIQC reference comparison, and my first
+implementation did exactly that: a metric dropdown, a dataset distribution, and
+a reference population fetched from the MRIQC Web API. Getting that working was
+the easy part. Nearly all of the design work came from three problems it
+exposed.
 
-- Replaced the MRIQC-specific top-level configuration with a per-task
-  `iqm_path` list, following the existing montage configuration pattern.
-- Each metric source is its own tab: multi-row sources show distributions;
-  single-row CSV or JSON sources show a metrics table.
-- Added curated MRIQC metric groups, generic handling of other sources, and DWI
-  support.
-- Redesigned plots around violin distributions, shared legends, and markers
-  scoped to the subject and run being reviewed.
-- Fixed scanner-metadata lookup, subject-switch widget state, and reference-data
-  loading; separated reference-data helpers from rendering code.
-- Added viewer, metric-group, and loader tests, with sample inputs and a DWI
-  test configuration.
+**Problem 1: the reference data could not be trusted or even downloaded.**
+Fetching from the MRIQC Web API ran for two full days without completing, and
+the partial result was too large to commit. I rewrote the lookup to read
+cached, filtered Parquet instead of querying the API per view, which made the
+panel usable. But extreme values in the population stretched the plot axes
+enough to make the dataset distribution unreadable, so clipping became
+necessary. At that point I concluded that loading the data successfully was not
+the same as displaying it honestly. Rather than ship a comparison I could not
+vouch for, I filed [#82](https://github.com/nipoppy/qc-studio/issues/82),
+hid the "Dataset + reference" mode, and kept the infrastructure in place behind
+it. Hiding a feature I had already built was the right call: a plausible-looking
+but wrong reference curve is worse for a reviewer than no curve at all.
 
-Reference-population comparison is hidden while reference cleaning and display
-problems are addressed in [#82](https://github.com/nipoppy/qc-studio/issues/82).
-The IQM/autoplay interaction is tracked in
-[#77](https://github.com/nipoppy/qc-studio/issues/77).
+**Problem 2: one dropdown per metric did not match how reviewers work.** In
+review, Nikhil pointed out that selecting metrics one at a time was cumbersome.
+I tried an overview/detail layout with a scrollable overview, then simplified to
+a metric grid inside each source tab, so a reviewer sees the whole picture
+first. I also replaced box plots with violins (which show the shape of a
+distribution, not just its quartiles), gave each tab one shared legend with
+consistent shapes and colors, and scoped the current-subject marker to the
+active run with hover text naming it. That last detail mattered more than it
+sounds: a distribution with an unscoped marker tells a reviewer nothing about
+which measurement belongs to the scan in front of them, and an early review
+comment caught exactly that case, where the highlighted subject was not visible
+at all.
 
-## 2. Rating Persistence
+**Problem 3: the configuration encoded MRIQC assumptions.** The original design
+had a top-level `iqm_distributions` setting with hardcoded `t1w` and `bold`
+groupings. Nikhil observed that the modality should follow from the QC task
+rather than being picked in the UI, and that pointed at the deeper issue: the
+feature was structured as an MRIQC add-on instead of a property of a QC task. I
+replaced it with a per-task `iqm_path` list, deliberately mirroring the existing
+`svg_montage_path` pattern so the configuration would be predictable to anyone
+who already knew the project. Each source became its own tab; MRIQC-like
+sources use curated metric groups, while others fall back to generic per-column
+display, so a non-MRIQC pipeline is degraded rather than unsupported. DWI
+support then followed from extending the group registry and inferring the
+modality, not from new display code, which is the practical test of whether that
+refactor was worth doing.
+
+The review also pushed the module boundaries. I had put the reference maps and
+download helpers in `ui/utils/data_loaders.py`; Nikhil argued that a loader
+module should not import `streamlit` and `requests` or hold configuration maps.
+I agreed and moved both into a dedicated `ui/utils/reference_data.py`. A final
+review round caught that `URL_PARENT` was resolved at import time, before the
+app's environment was in place, so I moved the resolution to call time.
+
+Alongside the feature I added tests for metric grouping, source loading, widget
+state, plot rendering paths, and DWI groups, plus sample MRIQC inputs and a DWI
+test configuration, since a viewer with no fixtures cannot be checked by anyone
+else.
+
+## 2. Rating Persistence: Reading the Widget Too Late
 
 **Delivered:** [PR #76](https://github.com/nipoppy/qc-studio/pull/76), merged
 September 2, 2026, fixing [#73](https://github.com/nipoppy/qc-studio/issues/73).
 
-During autoplay, a rating selected near the automatic-advance boundary could be
-lost: the timer read the widget state after navigation had already changed the
-active widget key. The fix saves ratings immediately through the widget's change
-callback, guards against an empty widget read replacing an existing rating, adds
-a grace period around automatic advance, and includes regression tests.
+A reviewer reported that some ratings chosen during autoplay were missing from
+the saved output. The report was intermittent, which is the hardest kind of bug
+to act on, and the first useful step was framing it as a timing problem rather
+than a save problem: I wrote #73 around the hypothesis that clicks near the
+automatic-advance boundary were the ones being lost.
 
-I also reported related notes and progress problems:
-[#11](https://github.com/nipoppy/qc-studio/issues/11),
+Reading the code confirmed it and explained why it was intermittent. A rating
+click never saved itself. It only reached the saved record when the autoplay
+timer next polled `session_state`. Each page advance rotated the widget key, so
+a click that landed after the timer had already advanced was read from a key
+that no longer belonged to the subject being rated, and the rating vanished with
+no error. Nothing was broken in the save path, which is why the bug survived
+ordinary testing: it depended entirely on when the click happened.
+
+That diagnosis made the fix structural rather than defensive. The rating now
+saves itself through the widget's `on_change` callback, so persistence no longer
+depends on the timer at all. Two safeguards back it up: a guard so an empty
+widget read cannot overwrite an existing rating, and a 0.3-second grace period
+(`AUTOPLAY_ADVANCE_GRACE_SECONDS`) before the poll treats the interval as
+elapsed, giving a click made right at the boundary time to reach the server and
+save itself. The PR is roughly 870 added lines against 15 removed, because most
+of it is regression tests: a test that fails under the original conditions is
+the only way to show a timing bug is actually gone.
+
+The same investigation surfaced related gaps in notes and partial progress,
+which I reported as [#11](https://github.com/nipoppy/qc-studio/issues/11),
 [#81](https://github.com/nipoppy/qc-studio/issues/81), and
-[#84](https://github.com/nipoppy/qc-studio/issues/84). All are closed; my part
-was the report and follow-up, and other contributors implemented the fixes.
+[#84](https://github.com/nipoppy/qc-studio/issues/84). All three are now closed;
+other contributors implemented those fixes.
 
-## 3. Performance and Development Checks
+## 3. Performance and the Project's First Automated Checks
 
-- **SVG loading:** [PR #62](https://github.com/nipoppy/qc-studio/pull/62) added
-  caching of SVG montage data to avoid repeated loading during widget
-  interactions (closed [#43](https://github.com/nipoppy/qc-studio/issues/43)).
-- **CI and local checks:** [PR #39](https://github.com/nipoppy/qc-studio/pull/39)
-  added GitHub Actions checks for Black, Flake8, and codespell, with
-  configuration and pre-commit setup that includes a UI test hook. A separate CI
-  test workflow was left as follow-up.
-- **Terminology:** [PR #34](https://github.com/nipoppy/qc-studio/pull/34) moved
-  SVG-specific wording to montage terminology for broader 2D support.
-- **Documentation:** [PR #66](https://github.com/nipoppy/qc-studio/pull/66)
-  repaired broken links; I also reviewed and merged cleanup in
-  [PR #67](https://github.com/nipoppy/qc-studio/pull/67).
+**SVG caching** ([PR #62](https://github.com/nipoppy/qc-studio/pull/62), closed
+[#43](https://github.com/nipoppy/qc-studio/issues/43)). Montages were being
+re-read and re-rendered on every widget interaction. Caching with
+`@st.cache_data` is the obvious move; making the cache key correct is the real
+work. The path list had to be normalized to a tuple before Streamlit could use
+it as a stable key, and I kept `load_svg_data()` as the public entry point while
+moving the expensive file loading, image conversion, and montage assembly into a
+cached helper, so callers did not change. I also decided *against* adding
+`st.fragment` in the same pass, and said so in the PR: fragmenting the
+rating/notes panel risked widget state going stale when the participant or
+session changed, which is precisely the class of bug I had just fixed in #76. I
+recorded my uncertainty rather than hiding it, and noted that `load_svg_data()`
+was doing too much and deserved a follow-up refactor separating path
+normalization, loading, conversion, and montage creation.
 
-## 4. Playwright Browser Testing
+**CI and local checks** ([PR #39](https://github.com/nipoppy/qc-studio/pull/39),
+from my own proposal in [#35](https://github.com/nipoppy/qc-studio/issues/35)).
+The project had no automated checks, so the first decision was how much to
+introduce at once. I deliberately staged it: formatting, linting, and spelling
+(Black, Flake8, codespell) in the first PR, with the test workflow left as an
+explicit follow-up in the checklist, because which tests belong on every PR is a
+question for the maintainers, not a thing to decide unilaterally in a
+configuration PR. Introducing a formatter to an existing codebase also means a
+large diff, which is a bad thing to bundle with a behavioral change.
+
+The local setup matters as much as the CI side. Pre-commit runs the same tools
+with the same configuration files, so the hooks and the CI job cannot disagree,
+and the file filters are scoped to `ui/` and `pipelines/` Python plus specific
+config files, so whitespace hooks do not start rewriting sample data. I added a
+local pytest hook so UI tests run before a commit rather than after a push. The
+staged plan also recorded what I was choosing not to do yet: separating
+lightweight from slow or data-dependent tests, and coverage reporting. Later,
+reviewing [#105](https://github.com/nipoppy/qc-studio/pull/105), I argued for
+keeping a documentation build in its own workflow for the same reason, so a docs
+failure cannot block code tests.
+
+Two smaller maintenance PRs came out of working in the code:
+[#34](https://github.com/nipoppy/qc-studio/pull/34) replaced SVG-specific
+wording with montage terminology once the panel handled 2D images generally, and
+[#66](https://github.com/nipoppy/qc-studio/pull/66) repaired broken
+documentation links.
+
+## 4. Playwright Testing: Writing the Specification First
 
 **In progress:** [PR #88](https://github.com/nipoppy/qc-studio/pull/88), open
-draft on the `e2e` branch. Related: [#75](https://github.com/nipoppy/qc-studio/issues/75).
+draft, 13 commits across 38 files. Related:
+[#75](https://github.com/nipoppy/qc-studio/issues/75).
 Details: [Playwright E2E Branch](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md).
 
-Many bugs I found involved several steps: select a rating, navigate, return,
-resume, or let autoplay advance. Mocked unit tests check the underlying logic,
-but browser tests are needed to check how real Streamlit widgets and reruns
-connect that logic to the workflow.
+Three of the bugs I had worked on (#73, #81, #84) shared a shape: the logic was
+correct in isolation, and the failure lived in the interaction between real
+widgets, session state, and Streamlit's rerun cycle. The existing `ui/tests/`
+suite mocks Streamlit, so by construction it cannot see that class of bug. That
+is the argument for browser tests, and I made it in #75 rather than starting to
+write tests and justifying them afterwards.
 
-- Pytest fixtures launch the real app on a free port with temporary output
-  directories and clean up the server.
-- Shared widget selectors and helpers, with explicit handling of Streamlit
-  reruns.
-- Chromium and Firefox configured.
-- 11 plain-English specifications (validation, ratings, navigation, overwrite
-  protection, upload/resume, checkpoints, notes, autoplay).
-- Six implemented test scenarios in four files: two smoke checks, two
-  rater-form validation checks, notes persistence, and notes pausing autoplay.
-- Project guidance for writing and reviewing tests with coding agents.
+The first design decision was scope: these tests are marked and run separately
+from the fast suite, because they need browser binaries and a real server, and a
+test layer that makes the quick feedback loop slow gets abandoned.
 
-Status: the PR description records passing Chromium smoke tests. Next steps are
-tightening the rerun waits, tracking overwritten exports, and adding the
-save/resume scenarios; the PR stays a draft until then. Some tests disable
-Niivue to focus on notes and autoplay, so they check the workflow, not volume
-rendering.
+The harness is built so a test does not have to know how the app starts. Pytest
+fixtures allocate a free port, launch the app with `streamlit run`, wait on its
+health endpoint, point output at a temporary directory so a test run cannot touch
+the repository's `output/`, and tear the server down afterwards. Widget
+selectors and interactions live in one shared module, with the awkward details
+handled once: ordinary buttons behave differently from form-submit buttons, and
+alert text may arrive with the leading emoji stripped. Tests reference
+user-facing strings through `ui/constants.py` instead of copying them, so a
+label change does not quietly break the suite.
+
+The hardest part is synchronization. Streamlit reruns the script after an
+interaction, so an assertion made immediately after a click can inspect the
+previous render. Negative assertions are the dangerous case, because "the
+element is gone" and "the new render has not arrived" look identical and the
+test passes for the wrong reason. The waits module centralizes this, waiting for
+the script state to reach `notRunning`, which is also the one part reviewers
+have pushed back on and where I expect to keep iterating.
+
+I also chose to write a specification before each test. Each one records the
+screen, category, priority, why the behavior needs a browser, Given/When/Then
+steps, and the relevant copy and constants. The point is that expected behavior
+becomes reviewable before any Playwright code exists, which is where
+disagreements are cheap to settle, and the 11 specifications now describe the
+risky paths (validation, ratings surviving navigation, upload and resume,
+overwrite protection, checkpoints, notes, autoplay) whether or not each has an
+implemented test yet. Six scenarios are implemented in four files, and they were
+not chosen at random: alongside two smoke checks and two rater-form validation
+checks, notes persistence across navigation and notes pausing autoplay are the
+browser-level versions of bugs #84 and #72. Some tests disable Niivue so they
+test the workflow rather than waiting on volume rendering.
+
+Because the specification-first workflow only helps if others follow it, the PR
+also includes the Claude Code skills and agents that encode those conventions
+for future contributors. Their scope is still open for discussion with the
+maintainer and could reasonably be split into a separate PR.
+
+Status: the PR description records passing Chromium smoke tests against a real
+browser. Next steps are tightening the rerun waits, tracking overwritten
+exports, and implementing the save/resume scenarios the specifications already
+describe.
 
 ## 5. Evidence Bundles for LLM-Assisted QC
 
@@ -170,26 +286,43 @@ Related: [#24](https://github.com/nipoppy/qc-studio/issues/24),
 [#40](https://github.com/nipoppy/qc-studio/issues/40).
 Details: [Evidence Bundle Branch](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md).
 
-I investigated packaging the evidence used in MRI quality review (scanner
-metadata, MRIQC metrics, reference statistics, metric explanations) for a model,
-then checking whether its response follows the requested format and the supplied
-evidence.
+The proposal's AI panel assumed pre-generated summaries, but it left the harder
+question open: what does a model actually need to see in order to say anything
+defensible about a scan? I treated that as the research question and worked
+backwards from how a human reviews, which is never from a bare list of numbers.
+A reviewer reads a metric against context: what the metric means, how this scan
+compares with a population, and how much weight the measurement deserves.
 
-- Shared helpers load the evidence and render packages with values, percentiles,
-  z-scores, and a required response structure (decision, confidence, flagged
-  metrics, reasons, follow-up), validated with Pydantic in the IQM-only
-  experiment.
-- Tested cloud IQM-only prompting and local LLaVA-OneVision setups (0.5B and
-  4B), and explored 2D image representations for multimodal input.
+So the evidence package carries that context explicitly. Shared helpers load
+BIDS and scanner metadata, the scan's MRIQC metrics, and reference tables, filter
+the reference rows by scanner metadata, and compute percentiles and z-scores.
+Each metric is then paired with an interpretation and its caveats, and the
+package records direction of concern and evidence strength per metric. Rather
+than ask the model to decide what to look at, the builder highlights metrics
+flagged as important or sitting beyond the 10th or 90th percentile or an absolute
+z-score of 1.5. Those are deliberately simple experimental rules, chosen so that
+what the model was shown is reconstructable afterwards instead of hidden in a
+prompt.
 
-The IQM-only packages used three MR-ART acquisitions from one subject (standard,
-headmotion1, headmotion2); the saved Claude responses were `uncertain`,
-`uncertain`, and `fail`. Other runs showed that valid JSON can still contain
-wrong interpretations of the metrics, which shaped the validation approach. The
-result is a reusable experimental structure and a set of documented findings. As
-early exploration on a small set of examples, it points to a larger labeled
-evaluation as the next step; the dataset is public and the generated metric
-explanations still need expert review.
+The second decision was to constrain the output and validate it. The response
+schema requires a decision, confidence, summary, flagged metrics, reasons, and
+recommended follow-up, checked with Pydantic, and every run keeps both the
+package and the response (`PACKAGE.md`, `result.json`, `result_error.json`) so a
+failure can be traced to the evidence that produced it. I chose Markdown for the
+packages because being able to read what the model read mattered more during
+development than compactness, while noting JSON as the likely production format.
+
+That setup is what made the findings interpretable. Across three MR-ART
+acquisitions of one subject, the responses were `uncertain`, `uncertain`, and
+`fail`, with the clearly degraded scan the easiest to call. The more useful
+result came from the local LLaVA-OneVision runs: schema-valid JSON that still
+confused metric values with percentiles, flagged metrics that did not match its
+own prose, and used `direction_of_concern` inconsistently. Format validity and
+correct reasoning are separate problems, and only the first is cheap to check
+automatically. That is the main thing this sandbox establishes, along with a
+reusable structure for the larger labeled evaluation it would take to say
+anything about accuracy. The dataset is public, so training overlap is possible,
+and the generated metric explanations still need expert review.
 
 ## 6. Code Review and User-Workflow Testing
 
@@ -272,16 +405,29 @@ step.
 
 ## What I Learned
 
-- Tracing Streamlit behavior across widgets, reruns, session state, navigation,
-  and saved records.
-- Building a shared structure for browser tests instead of isolated scripts, and
-  turning manual observations into reproducible issues, regression tests, and
-  readable specifications.
-- Helping clarify expected save and navigation behavior in
-  [issue #89](https://github.com/nipoppy/qc-studio/issues/89#issuecomment-5674629745)
+- **Streamlit's execution model is the source of most of these bugs.** Reruns,
+  widget keys and session state interact in ways that unit tests with mocks
+  cannot see, which is why #76 was a timing fix rather than a save fix and why I
+  argued for a browser-test layer.
+- **Where code lives changes whether it can be reused.** The IQM refactor from a
+  global MRIQC setting to a per-task `iqm_path`, and moving reference handling
+  out of the loader module, were both prompted by review and both made later
+  work (DWI support, the evidence-bundle percentiles) cheaper.
+- **Deciding what not to ship is part of the work.** Hiding the reference
+  comparison pending #82, declining `st.fragment` in #62, and staging CI in two
+  PRs were all judgment calls I recorded with reasons so they could be argued
+  with.
+- **Reproducibility is what makes a finding useful to someone else.** Turning
+  intermittent reports into reproducible issues, regression tests that fail
+  under the original conditions, and readable specifications is what let other
+  contributors act on what I found.
+- **Review is a design conversation.** The strongest parts of #22 came out of
+  Nikhil's review comments, and my own reviews aimed to do the same thing: name
+  the concrete failure case, then retest it.
+- Open-source maintenance in practice: follow-up, verification, merging, and
+  closing superseded work. I also helped clarify expected save and navigation
+  behavior in [issue #89](https://github.com/nipoppy/qc-studio/issues/89#issuecomment-5674629745)
   (automatic snapshots were a proposal, not a delivered feature).
-- Open-source maintenance: review follow-up, issue verification, merging, and
-  closing resolved or superseded work.
 
 ## Next Steps
 
