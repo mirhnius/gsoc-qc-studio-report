@@ -192,4 +192,4 @@ design review, not a test of memory usage; the PR is open and marked WIP.
 - [Review and triage detail](GSoC_CONTRIBUTION_DOSSIER.md).
 
 How this inventory was checked, is described in
-[Notes on This Report](GSoC_FINAL_REPORT.md#notes-on-this-report).
+[About This Report](GSoC_FINAL_REPORT.md#about-this-report).
