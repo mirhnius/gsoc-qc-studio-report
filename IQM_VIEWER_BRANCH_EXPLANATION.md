@@ -1,155 +1,94 @@
 # IQM Viewer Development
 
 **Primary PR:** [#22](https://github.com/nipoppy/qc-studio/pull/22), merged  
-**Primary branch:** [`iqm-viewer-fixes`](https://github.com/nipoppy/qc-studio/tree/iqm-viewer-fixes)  
-**Branch snapshot:** October 5, 2026. Narrative revised October 10, 2026.
+**Branch:** [`iqm-viewer-fixes`](https://github.com/nipoppy/qc-studio/tree/iqm-viewer-fixes)  
+**Branch snapshot:** October 5, 2026
 
 ## Overview
 
-I developed the IQM viewer to bring quantitative image-quality evidence into
-QC-Studio's review workflow. Reviewers could already inspect images and montages,
-but the measurements produced by MRIQC were not integrated into that experience.
-The new panel lets a reviewer examine those measurements alongside the scan,
-without navigating a separate set of outputs.
+I developed the IQM viewer to bring MRIQC image quality metrics into the review
+session, so a reviewer can examine measurements alongside the scan being rated.
+It began as MRIQC reference-distribution plotting and became a general viewer
+with per-task metric sources, distribution plots, scan-level tables, and
+diffusion support. The core feature is merged in #22.
 
-The work began as MRIQC reference-distribution plotting and evolved into a more
-general viewer with per-task metric sources, distribution plots, scan-level
-tables, and diffusion support. The core feature landed in
-[PR #22](https://github.com/nipoppy/qc-studio/pull/22). Reference-data comparison
-and autoplay reliability remain distinct follow-up areas rather than being
-presented as fully resolved.
-
-## Motivation and Related Issues
-
-[Issue #12](https://github.com/nipoppy/qc-studio/issues/12) requested IQM
-distribution views and comparison with MRIQC reference data to support scan
-interpretation. It was closed by the IQM PR.
-[Issue #23](https://github.com/nipoppy/qc-studio/issues/23) tracked documentation
-for the MRIQC Web API reference-data script and was also closed during this work.
-
-Two follow-up issues define the remaining boundaries.
-[Issue #77](https://github.com/nipoppy/qc-studio/issues/77) tracks IQM rendering
-problems during autoplay and automatic subject advance.
-[Issue #82](https://github.com/nipoppy/qc-studio/issues/82) concerns reference-data
-filtering and display correctness. Malformed or extreme reference values can
-distort plots, so the merged direction retained dataset IQM viewing while hiding
-reference comparison until that data handling is ready.
+Related issues: [#12](https://github.com/nipoppy/qc-studio/issues/12) (IQM
+distribution views, closed by the PR) and
+[#23](https://github.com/nipoppy/qc-studio/issues/23) (documentation for the
+MRIQC Web API reference-data script, also closed). Open follow-ups:
+[#77](https://github.com/nipoppy/qc-studio/issues/77) (IQM rendering during
+autoplay) and [#82](https://github.com/nipoppy/qc-studio/issues/82) (reference
+filtering and display).
 
 ## How the Design Evolved
 
-The initial version added IQM distributions, a reference-data fetching script,
-and reference-comparison plots. Feedback showed that a metric dropdown was
-cumbersome and that an all-IQM view could become too dense. I explored an
-overview/detail layout, then simplified the display to a metric grid within
-each source tab.
+The first version added IQM distributions, a reference-data fetching script, and
+reference-comparison plots. Feedback showed a metric dropdown was cumbersome and
+an all-IQM view too dense, so I simplified to a metric grid within each source
+tab.
 
-The architecture also changed as the feature was adapted to the pagination
-refactor. The earlier top-level `iqm_distributions` setting was MRIQC-specific
-and assumed groupings such as `t1w` and `bold`. I replaced it with a per-task
-`iqm_path` list, following the existing `svg_montage_path` configuration
-pattern. This made the metrics part of the configured QC task instead of a
-separate hardcoded MRIQC feature.
+Adapting to the pagination refactor changed the architecture. The top-level
+`iqm_distributions` setting was MRIQC-specific and assumed groupings such as
+`t1w` and `bold`. I replaced it with a per-task `iqm_path` list, following the
+existing `svg_montage_path` pattern, so metrics are part of the configured QC
+task. Each source appears in its own tab; non-MRIQC sources show as generic
+plots or tables. A final cleanup separated reference-data helpers from
+rendering and resolved the reference URL at call time.
 
-A task can now refer to multiple IQM sources, and each source is displayed in its
-own tab. This accommodates different pipeline inputs and allows non-MRIQC
-sources to appear as generic plots or tables. The final cleanup separated
-reference-data helpers from rendering, resolved the reference URL at call time,
-and removed unnecessary imports, aliases, comments, and docstring clutter.
+## Viewer Behavior
 
-## Viewer and Plot Behavior
+- Multi-row tables show metric distributions; single-row CSV or JSON inputs show
+  a metrics table.
+- MRIQC-like sources use curated metric groups; others fall back to per-column
+  display.
+- Violin plots replace box plots, with one shared legend per IQM tab. The
+  reference-comparison design used split violins, but that control is hidden in
+  the merged UI pending #82.
+- Markers identify the current subject, scoped to the active run or task, with
+  hover text naming the run or source.
+- The MRIQC group registry covers diffusion metrics, with DWI group tests, a
+  sample input, the configuration `pipelines/mriqc/dwi_iqm_test_qc.json`, and a
+  launch script `ui/dwi_iqm_test.sh`.
 
-The viewer adapts its presentation to the input. Multi-row tables show metric
-distributions, while single-row CSV or JSON inputs show a metrics table.
-MRIQC-like sources use curated metric groups; other sources fall back to
-per-column display. This keeps the panel useful for both dataset-level
-comparison and individual-scan measurements.
+## Implementation
 
-I replaced box plots with violin plots and added a shared legend for each IQM
-tab. The reference-comparison design used split violins, with dataset and
-reference values on opposing sides, although that comparison control is hidden
-in the merged UI pending reference cleanup. Dataset distributions remain part
-of the delivered feature.
+The main component is `ui/components/iqm_viewer.py`. Metric groups live in
+`ui/utils/iqm_distribution_config.py` and reference loading and download helpers
+in `ui/utils/reference_data.py`. Reference acquisition uses
+`scripts/fetch_mriqc_reference.py` (documented in
+`scripts/fetch_mriqc_reference.md`).
 
-Markers identify the current subject where suitable data are available, with
-scoping to the active run/task and hover text identifying the relevant run or
-source. This matters because a distribution alone does not tell the reviewer
-which measurement belongs to the scan they are currently rating.
+Several fixes concerned whether the viewer showed evidence for the correct scan:
+scanner-metadata sidecar lookup (wrong-subject fallback, derivatives paths,
+`dataset_dir` propagation), subject-marker scoping, widget-state resets when
+switching subjects, and duplicate MRIQC tab labels. Others fixed stale viewer
+tests, a display-mode radio hidden by the scrollable montage container, runtime
+reference URL resolution, and lazy creation of the reference cache.
 
-## Diffusion Support and Sample Inputs
+## Reference Data
 
-The work extended the MRIQC group registry to diffusion metrics and added DWI
-group tests, sample input, a configuration, and a launch script. These additions
-provided a concrete way to exercise diffusion IQMs rather than limiting the
-viewer to the initial anatomical and functional examples.
+During development the reference data proved large, API access slow, and extreme
+values stretched plot axes, so loading it successfully was not enough to make
+its display trustworthy. The helpers and fetching script exist, but the
+comparison control is hidden until #82 is resolved. The evidence-bundle
+experiments use the same reference percentiles and z-scores and depend on the
+same cleaning.
 
-The DWI configuration is `pipelines/mriqc/dwi_iqm_test_qc.json`, with a launch
-script at `ui/dwi_iqm_test.sh`. Sample MRIQC inputs also support testing of
-source loading and display behavior.
-
-## Implementation and Reliability Fixes
-
-The main viewer component is `ui/components/iqm_viewer.py`. Metric groups and
-display configuration live in `ui/utils/iqm_distribution_config.py`, while
-`ui/utils/reference_data.py` contains the separated reference-data loading
-and download helpers. Reference acquisition is supported by
-`scripts/fetch_mriqc_reference.py` and its documentation,
-`scripts/fetch_mriqc_reference.md`.
-
-Several fixes concerned whether the viewer showed evidence for the correct scan.
-I corrected scanner-metadata sidecar lookup, including wrong-subject fallback,
-derivatives-path support, and propagation of `dataset_dir`. I also corrected
-subject-marker scoping, widget-state resets when switching subjects, and
-duplicate MRIQC tab labels.
-
-Other fixes addressed integration details: stale viewer tests, a display-mode
-radio hidden by the scrollable montage container, runtime reference URL
-resolution, and lazy creation of the reference cache. Moving reference loading
-and caching out of unrelated loader modules made its responsibility clearer.
-
-## Reference-Data Work
-
-I added infrastructure for fetching and using MRIQC Web API reference
-distributions. During development, the reference data proved large, API access
-was slow, and extreme values stretched plot axes. Those observations showed that
-loading the data successfully was not enough to make its display trustworthy.
-
-The final state therefore separates infrastructure from the enabled feature.
-Reference helpers and the fetching script exist, but the comparison control is
-hidden pending [#82](https://github.com/nipoppy/qc-studio/issues/82). This
-limitation also matters to the evidence-bundle experiments, which use reference
-percentiles and z-scores and would need the same validated data handling.
-
-## Testing and Validation
+## Tests
 
 I added or updated tests for the viewer, metric-group configuration, diffusion
-groups, and loading behavior. The principal test files include
-`ui/tests/test_iqm_viewer.py` and
-`ui/tests/test_iqm_distribution_config.py`. Sample inputs and the DWI test
-script provide additional ways to inspect the feature.
-
-The testing focus included metric grouping, source loading, widget state, plot
-rendering paths, and diffusion support. These contributions establish test
-coverage for the feature; this document does not claim a fresh full-suite test
-run during its editorial revision.
+groups, and loading, mainly in `ui/tests/test_iqm_viewer.py` and
+`ui/tests/test_iqm_distribution_config.py`, covering grouping, source loading,
+widget state, and plot rendering paths. I have not re-run the full suite while
+revising this document.
 
 ## Outcome and Remaining Work
 
-The delivered contribution is an IQM panel integrated with QC tasks, supporting
-multiple sources, dataset distributions, individual-scan tables, diffusion
-examples, subject markers, and shared legends. It spans configuration, interface
-design, plotting, data loading, and tests, with the core work merged in #22.
+Delivered: an IQM panel integrated with QC tasks, supporting multiple sources,
+dataset distributions, scan-level tables, diffusion examples, subject markers,
+and shared legends. Remaining: the autoplay interaction (#77), reference-data
+cleaning (#82), handling of dense metric grids, more realistic matching sample
+data, and refinement of reference-source management.
 
-The remaining work is explicit: investigate the IQM/autoplay interaction in #77,
-clean and validate reference distributions in #82, improve handling of dense
-metric grids, and use more realistic matching sample data. Reference-source
-management may also need refinement. These follow-ups do not change what
-landed, but they prevent the report from treating exploratory reference
-comparison as a finished production capability.
-
-My contribution brought quantitative evidence into the same review session as
-visual inspection. It also showed how the original reference-plot idea could be
-adapted into a more general, maintainable per-task component while recording the
-parts that still require validation.
-
-This work is summarized in the [GSoC Final Report](GSoC_FINAL_REPORT.md), with
-linked contribution records in the [report appendices](GSoC_REPORT_APPENDIX.md).
+See the [GSoC Final Report](GSoC_FINAL_REPORT.md) and
+[appendices](GSoC_REPORT_APPENDIX.md).
