@@ -44,13 +44,10 @@ State: merged
 
 Review contribution:
 
-I spent substantial time reviewing this early pagination PR. I did not submit
-the feedback publicly because I was still learning how to post a GitHub review.
-This is review work performed on a merged PR, not an open review task. GitHub's
-unsubmitted review entry supports the existence of review activity, while my
-account provides the context about the time invested and why it was not posted.
-Individual findings are not attributed without supporting detail, and the
-pagination implementation is credited to the PR author.
+My first substantial review on the project: I read the pagination code in depth
+early on, before I was comfortable with GitHub's review workflow, so the
+comments were never submitted publicly. The pagination implementation is
+credited to the PR author.
 
 ### #25: Fix pagination compatibility and test alignment
 

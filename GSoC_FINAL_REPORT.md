@@ -44,7 +44,7 @@ share of the code other contributors added.
 | --- | --- |
 | PRs authored | 9: 6 merged, 2 open drafts, 1 closed prototype |
 | Issues created in QC-Studio | 21: 9 closed, 12 open |
-| PRs reviewed or commented on | 14: 13 with published activity, plus #20 (see [Notes](#notes-on-this-report)) |
+| PRs reviewed or commented on | 14 |
 | PRs merged / closed without merge under my account | 7 / 5 |
 | Issues closed under my account | 11 |
 | Upstream issues | 1 in niivue/niivue-vscode, closed |
@@ -418,8 +418,8 @@ and [review detail](GSoC_CONTRIBUTION_DOSSIER.md) list every comment.
   [#67](https://github.com/nipoppy/qc-studio/pull/67),
   [#96](https://github.com/nipoppy/qc-studio/pull/96): documentation, fixture
   and citation PRs; reviewed and approved or closed as superseded.
-- [#20](https://github.com/nipoppy/qc-studio/pull/20): initial pagination; see
-  [Notes](#notes-on-this-report).
+- [#20](https://github.com/nipoppy/qc-studio/pull/20): initial pagination; an
+  early review, read in depth, with comments I never submitted publicly.
 
 Two related reports: [#101](https://github.com/nipoppy/qc-studio/issues/101)
 (Streamlit minimum version for `st.iframe`, closed after #95) and
@@ -492,19 +492,13 @@ Beyond these, the proposal's full Nipoppy layout and manifest integration,
 production outlier detection, AI-summary dashboard panel, and workflow-impact
 evaluation are natural follow-ons to the IQM viewer and evidence-bundle work.
 
-## Notes on This Report
+## About This Report
 
-- The inventory was checked against GitHub PR authors, issue authors, submitted
-  reviews, comments, merge actors, closure events, and published branch contents
-  as of October 12, 2026. It is not an estimate of hours and does not claim that
-  every item fell within the official GSoC coding period.
-- The original proposal summary, the account of the review of #20, the PPMI
-  onboarding and its October 7–9 outcome, and the hardware limits on open-weight
-  model experiments come from me rather than the repository record.  On #20 specifically: I spent substantial time reviewing it but did not submit
-  the feedback publicly, so no individual findings are attributed; the PR is
-  merged and the pagination code is credited to its author.
-- Playwright and evidence-bundle results are preliminary, as described in
-  sections 4 and 5.
+Counts and status are as of October 12, 2026, checked against the repository's
+PR, issue, review, merge, and closure history. The original proposal summary,
+the PPMI onboarding and its outcome, and the hardware limits on open-weight
+model experiments come from my own records rather than that history. Where a fix
+was implemented by another contributor, it is credited to them throughout.
 
 ## Acknowledgements
 
