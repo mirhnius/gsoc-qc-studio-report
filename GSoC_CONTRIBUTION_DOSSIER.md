@@ -44,12 +44,30 @@ State: merged
 
 Review contribution:
 
-My first substantial review on the project. I went through the pagination code
-in detail and wrote many comments on it, but the review is still pending on
-GitHub, so those comments were never published on the PR; at the time I was not
-yet comfortable with GitHub's review workflow.
+My first review on the project, written April 6–8, 2026, before I had authored
+any code in this repository. The comments stayed in an unsubmitted review for
+most of the project because I was not yet comfortable with GitHub's review
+workflow; they were
+[submitted](https://github.com/nipoppy/qc-studio/pull/20#pullrequestreview-4064027658)
+on October 12, 2026 and each carries its original April creation date.
 
-The maintainer's response records that the input reached him:
+Seven inline comments across six files:
+
+- `ui/qc_viewer.py:184` — a duplicated function also present in `pagination.py`.
+- `ui/ui.py:63` — session state initialized both here and in `layout.py`.
+- `ui/qc_viewer.py:115` — `dataset_dir` was not passed to the function.
+- `ui/managers/panel_layout_manager.py:34` — asked whether this duplicated
+  `SessionManager.get_panel_count()`.
+- `ui/managers/session_manager.py:76` — suggested enforcing `panels_data` as a
+  dict with an explicit `TypeError`, noting the implementation did not handle a
+  boolean in the string case; included a code suggestion.
+- `ui/pagination.py:67` — questioned why empty rating and notes were passed
+  through.
+- `ui/qc_viewer.py:40` — proposed a `normalize_selected_panels()` method on
+  `PanelLayoutManager` to convert both key sets (`niivue_col`/`svg_col`/`iqm_col`
+  and `niivue`/`svg`/`iqm`) into one, so `display_qc_rating_and_pagination()`
+  and others would not each map keys themselves.
+
 [Nikhil thanked me by name](https://github.com/nipoppy/qc-studio/pull/20#issuecomment-4413781991),
 alongside `ThomasHMAC` and `GhazalehManj`, for the comments on this PR and said
 he had addressed them all before asking for approval to merge. The pagination

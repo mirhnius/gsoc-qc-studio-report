@@ -377,12 +377,20 @@ and [review detail](GSoC_CONTRIBUTION_DOSSIER.md) list every comment.
 **Larger reviews**
 
 - [#20](https://github.com/nipoppy/qc-studio/pull/20) (initial pagination): my
-  first in-depth review on the project, with many comments on the pagination
-  code. GitHub still shows that review as pending, so the comments were never
-  published there. Nikhil
-  [thanked me by name for them](https://github.com/nipoppy/qc-studio/pull/20#issuecomment-4413781991)
-  alongside the other reviewers and said he had addressed them all before the
-  PR was approved for merge. The pagination implementation is his.
+  first review on the project, written in April 2026 before I had authored any
+  code here, and
+  [now submitted](https://github.com/nipoppy/qc-studio/pull/20#pullrequestreview-4064027658)
+  as seven inline comments across six files. They covered a duplicated function
+  shared with `pagination.py`, session state initialized in two places, a
+  `dataset_dir` argument that was never passed, a panel-count helper duplicating
+  `SessionManager.get_panel_count()`, type handling for `panels_data` in session
+  state, and empty ratings and notes being passed through pagination. The last
+  one proposed a `normalize_selected_panels()` method on `PanelLayoutManager` so
+  the two sets of panel keys were unified in one place instead of each function
+  doing its own mapping. Nikhil
+  [thanked me by name for these comments](https://github.com/nipoppy/qc-studio/pull/20#issuecomment-4413781991)
+  with the other reviewers and said he had addressed them all before the PR was
+  approved. The pagination implementation is his.
 - [#95](https://github.com/nipoppy/qc-studio/pull/95) (multifacet ratings):
   found saved ratings being masked by all-`None` widgets, facet-name changes
   that broke saved matching, checkpoint lookup across the wrong rater or task,
