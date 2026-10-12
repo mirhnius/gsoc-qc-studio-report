@@ -27,10 +27,13 @@ share of the code other contributors added.
   reported were fixed and closed.
 - **Upstream impact:** a Niivue issue (#314) I filed led to the loading events
   I asked for being implemented in master.
-- **Project direction:** as the project progressed, the app's reliability for real review sessions
-  became the priority, so my effort went there. Full Nipoppy `DatasetLayout` and
-  manifest integration, production outlier detection, and an AI-summary
-  dashboard panel are left as future work, with the sandbox and IQM
+- **Project direction:** two things reset the priorities mid-project. New users
+  were preparing to QC the PPMI dataset, which made the app's reliability for
+  real review sessions and the review of incoming PRs the urgent work; and the
+  infrastructure needed to experiment with open-weight models was not available,
+  so the AI panel could not progress past the sandbox. Full Nipoppy
+  `DatasetLayout` and manifest integration, production outlier detection, and the
+  AI-summary dashboard panel are left as future work, with the sandbox and IQM
   infrastructure as the starting point.
 
 | Activity | Count (October 12, 2026) |
@@ -57,17 +60,32 @@ My proposal had three deliverables:
 - An experimental AI panel displaying pre-generated summaries, with an
   evaluation of their factual accuracy and effect on the review workflow.
 
-As the project progressed, the most valuable work turned out to be making the
-existing application reliable for real QC sessions. Rating persistence,
-navigation, filtering, saving, checkpoints, and notes all needed attention, so
-implementation, code review, regression testing, and browser-test
-infrastructure became a larger share of my work.
+Two developments during the project changed which of these mattered most.
+
+**Real users arrived.** New users were preparing to run QC on the PPMI dataset,
+which turned reliability from a quality concern into a blocking one. An AI
+summary panel on top of an application that could drop a reviewer's rating would
+not have been worth building. Rating persistence, navigation, filtering, saving,
+checkpoints, and notes all needed attention, and contributors were adding
+features in those same areas at the same time. Reviewing those PRs carefully
+became a priority in its own right, since a defect merged into the save or
+resume path would reach real raters working on a real dataset. That is why
+implementation, code review, regression testing, and browser-test infrastructure
+became the largest share of my work.
+
+**The compute for open-weight models was not there.** The AI deliverable assumed
+I could experiment with open-weight models locally. In practice the
+infrastructure for that was not available: the models I could actually run on my
+laptop were too small for the task, and the larger ones would not run at all.
+Section 5 describes what this allowed and what it ruled out. The work therefore
+stopped at a sandbox, which is an honest finding about what this line of research
+needs rather than a result I could extend by trying harder.
 
 | Original goal | What I built | Where it stands |
 | --- | --- | --- |
 | Nipoppy-integrated architecture | Per-task IQM source configuration, adaptation of the viewer to pagination, and reviews of cohort navigation, record identity, and resume behavior in others' PRs. | Configuration and integration work is in the app. Full `DatasetLayout` and `manifest.tsv` integration is future work; pagination implemented by others is credited to them. |
 | IQM distributions and outlier detection | Merged IQM viewer with dataset distributions, scan-level tables, multiple sources, DWI support, and tests; reference-data infrastructure; metric highlighting in the evidence sandbox. | Dataset IQM panel is live. Reference comparison is built and will be re-enabled once reference data is cleaned (#82). Production outlier detection builds on the sandbox rules. |
-| AI summaries and evaluation | Structured evidence packages, model experiment scripts, response-schema validation, and findings on cloud and local models. | A working sandbox with documented findings. Dashboard integration and a larger evaluation are the next step. |
+| AI summaries and evaluation | Structured evidence packages, model experiment scripts, response-schema validation, and findings on cloud and local models. | A working sandbox with documented findings. Blocked from going further by the lack of infrastructure for open-weight models; dashboard integration and a larger evaluation need that compute first. |
 
 Work added beyond the original proposal: the autoplay persistence fix, CI and local
 checks, SVG caching, the draft Playwright framework, workflow reviews, and the
@@ -312,6 +330,18 @@ failure can be traced to the evidence that produced it. I chose Markdown for the
 packages because being able to read what the model read mattered more during
 development than compactness, while noting JSON as the likely production format.
 
+The limiting factor turned out to be infrastructure rather than design. The
+proposal assumed I could iterate on open-weight models locally, and that was not
+possible on the hardware available to me. Apple MPS hit memory and allocation
+failures, so the 4B model had to run on CPU, which made each iteration slow
+enough to discourage the repeated runs an evaluation needs; larger open-weight
+models were out of reach entirely. What remained in range were models small
+enough to test the pipeline but too small to do the task, plus cloud models for
+the IQM-only text experiments. Setting up or obtaining GPU infrastructure was
+outside what I could do within the project, so I treated the limit as a result
+to record: this line of work needs that infrastructure in place before an
+evaluation is meaningful.
+
 That setup is what made the findings interpretable. Across three MR-ART
 acquisitions of one subject, the responses were `uncertain`, `uncertain`, and
 `fail`, with the clearly degraded scan the easiest to call. The more useful
@@ -452,10 +482,11 @@ evaluation are natural follow-ons to the IQM viewer and evidence-bundle work.
   reviews, comments, merge actors, closure events, and published branch contents
   as of October 12, 2026. It is not an estimate of hours and does not claim that
   every item fell within the official GSoC coding period.
-- The original proposal summary and the account of the review of #20 come from
-  me. I spent substantial time reviewing #20, but did not submit the feedback
-  publicly, so no individual findings are attributed; the PR is merged and the
-  pagination code is credited to its author.
+- The original proposal summary, the account of the review of #20, the PPMI
+  onboarding that reset the priorities, and the hardware limits on open-weight
+  model experiments come from me rather than the repository record.  On #20 specifically: I spent substantial time reviewing it but did not submit
+  the feedback publicly, so no individual findings are attributed; the PR is
+  merged and the pagination code is credited to its author.
 - Playwright and evidence-bundle results are preliminary, as described in
   sections 4 and 5.
 

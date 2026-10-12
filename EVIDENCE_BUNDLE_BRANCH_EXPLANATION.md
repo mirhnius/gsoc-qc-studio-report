@@ -115,7 +115,8 @@ content and not let ambiguous impressions override strong quantitative evidence.
   responses contained unsupported findings, copied schemas, confused values with
   percentiles, and included unrelated text.
 - **4B** (`lmms-lab/LLaVA-OneVision-1.5-4B-Instruct`): Apple MPS ran into
-  memory problems, so a CPU path was used. Output structure improved, but
+  memory and allocation problems, so a CPU path was used, which made each run
+  slow enough to discourage repeated iteration. Output structure improved, but
   semantic problems remained: excessive reasons, missing follow-up,
   inconsistent `direction_of_concern`, and flagged metrics that did not match
   the prose.
@@ -124,6 +125,18 @@ content and not let ambiguous impressions override strong quantitative evidence.
   is not a controlled ranking.
 
 Valid JSON is not the same as correct interpretation.
+
+## Infrastructure Limits
+
+The decisive constraint on this work was compute rather than design. The plan
+assumed local iteration on open-weight models, which was not possible on the
+hardware available to me: MPS failed on memory and allocation, the CPU fallback
+was too slow for repeated runs, and larger open-weight models could not be run
+at all. The models that did run were useful for validating the input pipeline
+but too small to reason about MRI quality, so the IQM-only text experiments with
+a cloud model carried most of the findings. Anyone continuing this work should
+secure GPU infrastructure first; without it, the open-weight side cannot produce
+a meaningful evaluation, whatever the prompt or package design.
 
 ## Findings and Future Work
 
