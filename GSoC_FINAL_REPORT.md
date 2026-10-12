@@ -79,11 +79,7 @@ explains why the final contribution includes work across several components and
 PRs. The IQM implementation, persistence fix, workflow reviews, and testing
 framework each address a different part of making that session dependable.
 
-This report presents the original scope alongside the actual outcomes. For the
-final submission, the revised priorities and the original items deferred beyond
-GSoC should be recorded with the mentor's agreed expectations. GSoC's planning
-guidance allows changes to the proposed project when the contributor and mentor
-agree. [GSoC planning guidance](https://google.github.io/gsocguides/mentor/managing-the-plan).
+This report presents the original scope alongside the actual outcomes.
 
 ## Main Outcomes
 
@@ -385,9 +381,7 @@ step. [Maintainer response](https://github.com/niivue/niivue-vscode/issues/314#i
 
 The original proposal also included full Nipoppy layout/manifest integration,
 production outlier detection, an AI-summary dashboard panel, and a workflow-impact
-evaluation. These are not reported as delivered. Their place in the final
-handoff depends on the revised scope agreed with the mentor; they should not
-automatically be treated as additional commitments for the remaining period.
+evaluation. These are not reported as delivered.
 
 The remaining issues already provide entry points for follow-up development.
 
