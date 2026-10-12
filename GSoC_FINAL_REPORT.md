@@ -376,6 +376,13 @@ and [review detail](GSoC_CONTRIBUTION_DOSSIER.md) list every comment.
 
 **Larger reviews**
 
+- [#20](https://github.com/nipoppy/qc-studio/pull/20) (initial pagination): my
+  first in-depth review on the project, with many comments on the pagination
+  code. GitHub still shows that review as pending, so the comments were never
+  published there. Nikhil
+  [thanked me by name for them](https://github.com/nipoppy/qc-studio/pull/20#issuecomment-4413781991)
+  alongside the other reviewers and said he had addressed them all before the
+  PR was approved for merge. The pagination implementation is his.
 - [#95](https://github.com/nipoppy/qc-studio/pull/95) (multifacet ratings):
   found saved ratings being masked by all-`None` widgets, facet-name changes
   that broke saved matching, checkpoint lookup across the wrong rater or task,
@@ -418,8 +425,6 @@ and [review detail](GSoC_CONTRIBUTION_DOSSIER.md) list every comment.
   [#67](https://github.com/nipoppy/qc-studio/pull/67),
   [#96](https://github.com/nipoppy/qc-studio/pull/96): documentation, fixture
   and citation PRs; reviewed and approved or closed as superseded.
-- [#20](https://github.com/nipoppy/qc-studio/pull/20): initial pagination; an
-  early review, read in depth, with comments I never submitted publicly.
 
 Two related reports: [#101](https://github.com/nipoppy/qc-studio/issues/101)
 (Streamlit minimum version for `st.iframe`, closed after #95) and

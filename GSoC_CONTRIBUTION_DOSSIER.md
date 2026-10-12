@@ -44,10 +44,16 @@ State: merged
 
 Review contribution:
 
-My first substantial review on the project: I read the pagination code in depth
-early on, before I was comfortable with GitHub's review workflow, so the
-comments were never submitted publicly. The pagination implementation is
-credited to the PR author.
+My first substantial review on the project. I went through the pagination code
+in detail and wrote many comments on it, but the review is still pending on
+GitHub, so those comments were never published on the PR; at the time I was not
+yet comfortable with GitHub's review workflow.
+
+The maintainer's response records that the input reached him:
+[Nikhil thanked me by name](https://github.com/nipoppy/qc-studio/pull/20#issuecomment-4413781991),
+alongside `ThomasHMAC` and `GhazalehManj`, for the comments on this PR and said
+he had addressed them all before asking for approval to merge. The pagination
+implementation is credited to him.
 
 ### #25: Fix pagination compatibility and test alignment
 

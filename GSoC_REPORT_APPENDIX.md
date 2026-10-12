@@ -61,7 +61,7 @@ described in [Section 7 of the main report](GSoC_FINAL_REPORT.md#7-upstream-niiv
 | --- | --- | --- |
 | [#10](https://github.com/nipoppy/qc-studio/pull/10), `nikhil153` | Viewer layout and overlay controls. | Asked about height/configuration behavior, reported colorbar stacking, checked the update, and approved. |
 | [#17](https://github.com/nipoppy/qc-studio/pull/17), `laurapiro17` | Documentation typo. | Explained that prior changes had addressed it and closed the superseded PR. |
-| [#20](https://github.com/nipoppy/qc-studio/pull/20), `nikhil153` | Initial pagination work. | An early review: read the pagination code in depth, but the comments were never submitted publicly. The implementation is credited to the author. |
+| [#20](https://github.com/nipoppy/qc-studio/pull/20), `nikhil153` | Initial pagination work. | A detailed early review with many comments on the pagination code. The review is still pending on GitHub, so the comments were never published there, but Nikhil [thanked me by name for them](https://github.com/nipoppy/qc-studio/pull/20#issuecomment-4413781991) with the other reviewers and said he had addressed them all. The implementation is credited to the author. |
 | [#25](https://github.com/nipoppy/qc-studio/pull/25), `GhazalehManj` | Session manager, cohort helpers, landing/completion pages, and sidebar navigation. | Six inline comments on duplicate handling, session assumptions, display constants, completed uploads, stale Continue QC widgets, and Start Over records. Follow-up changes explicitly acknowledged the review; I merged the PR. |
 | [#38](https://github.com/nipoppy/qc-studio/pull/38), Copilot agent | Montage fixture/documentation terminology. | Approved cleanup and later closed the PR. |
 | [#53](https://github.com/nipoppy/qc-studio/pull/53), `SRSteinkamp` | Keyboard controls and narrow-screen layout. | Raised notes-field shortcut conflicts, Play/Pause coverage, and wrapped button labels. |
@@ -191,5 +191,5 @@ design review, not a test of memory usage; the PR is open and marked WIP.
 - [Evidence-bundle explanation](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md).
 - [Review and triage detail](GSoC_CONTRIBUTION_DOSSIER.md).
 
-How this inventory was checked, is described in
+How this inventory was checked is described in
 [About This Report](GSoC_FINAL_REPORT.md#about-this-report).
