@@ -41,7 +41,20 @@
 - [Next Steps](#next-steps) — open work, with entry points
 - [About This Report](#about-this-report) — how the records were checked
 
-Each section of the work links to a longer technical document for its branch.
+**Companion documents.** Sections 1, 4, and 5 are summaries. The full technical
+account of each piece of work lives in its own document, and anyone picking up
+that work should start there rather than here:
+
+- **[IQM Viewer](IQM_VIEWER_BRANCH_EXPLANATION.md)** — how the design moved from
+  MRIQC-only to any pipeline, the reference-data investigation and why the
+  comparison is disabled, the implementation, and the tests.
+- **[Playwright E2E](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md)** — the suite's four
+  layers, rerun synchronization, the selector strategy and Streamlit's quirks,
+  the specification template, and the shared conventions for contributors.
+- **[Evidence Bundles](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md)** — the purpose,
+  how a package is built, the sandbox layout, the model experiments, and the
+  infrastructure limits that stopped the work.
+
 Full records of every PR, issue, review, merge, and closure are in the
 [appendices](GSoC_REPORT_APPENDIX.md).
 
@@ -216,45 +229,40 @@ upstream Niivue report.
 **Merged:** [PR #22](https://github.com/nipoppy/qc-studio/pull/22), September 10,
 2026. Closes [#12](https://github.com/nipoppy/qc-studio/issues/12) and
 [#23](https://github.com/nipoppy/qc-studio/issues/23).
-Full detail: [IQM Viewer Branch](IQM_VIEWER_BRANCH_EXPLANATION.md).
+**Full detail:** [IQM Viewer Branch](IQM_VIEWER_BRANCH_EXPLANATION.md).
 
-Reviewers could see images but not the numbers MRIQC produces for them.
+Reviewers could see the images but not the numbers. Pipelines such as MRIQC
+already measure signal-to-noise, motion, and sharpness for every scan, but those
+values sat in the derivatives while the rating was made on visual impression
+alone. The IQM viewer brings them onto the same screen as the scan being rated,
+so a decision can rest on the measurement as well as the picture.
 
-**From MRIQC-only to any pipeline.** The first version supported MRIQC across
-its modalities, configured by a top-level setting that hardcoded groupings such
-as `t1w` and `bold`. That made the panel an MRIQC add-on rather than a property
-of a QC task, so I redesigned it around a per-task `iqm_path` list — mirroring
-the existing `svg_montage_path` pattern — pointing at individual JSON files.
-A task can now declare several sources, each shown in its own tab, so a pipeline
-other than MRIQC is supported with its own metrics, and different metric sets,
-version-suffixed pipeline names, and modalities can be displayed. MRIQC-like
-sources use curated metric groups; others fall back to generic per-column
-display, so an unfamiliar pipeline is degraded rather than unsupported. DWI
-support then followed from extending the group registry, with no new display
-code — the practical test of whether the refactor was worth doing.
+**What it does.** Each QC task declares its own metric sources in `qc.json`, so
+the panel is not tied to MRIQC: any pipeline that writes metrics as JSON can be
+displayed, with its own metric set, version-suffixed pipeline names, and
+modality. Each source appears in its own tab. Sources with many rows are drawn
+as distributions across the dataset, with a marker scoped to the run under
+review so a reviewer can see where their scan falls; a single-row source is
+shown as a metrics table instead. MRIQC-like sources use curated metric groups,
+and anything else falls back to per-column display, so an unfamiliar pipeline is
+degraded rather than unsupported.
 
-**Reference data: built, but not trustworthy yet.** To compare a scan against a
-population, I wrote the code to collect reference distributions from the MRIQC
-endpoint. It ran for two days without finishing, so I used the partial download
-as-is, and only for the structural modality. The loader caches filtered Parquet
-with a seven-day refresh and normalizes scanner metadata, so a comparison is
-drawn against similar acquisitions rather than everything.
+**How it got there.** The first version supported only MRIQC, through a
+top-level setting that hardcoded modality groupings. Redesigning it around a
+per-task `iqm_path` list — mirroring the existing `svg_montage_path` pattern —
+made metrics a property of a QC task rather than an MRIQC add-on, and that is
+what made the panel general. The test of whether it worked came with diffusion
+support, which needed only an extension to the metric registry and no new
+display code.
 
-The problem was what the data showed: the MRIQC population distribution was
-markedly different from the dataset being reviewed. A comparison like that is
-not informative, and could mislead a reviewer into doubting a perfectly good
-scan. So the capability exists but is disabled, and
-[#82](https://github.com/nipoppy/qc-studio/issues/82) tracks the cleanup and
-testing it needs. Part of the fix is a rule rather than more data: if the two
-distributions are that far apart, the viewer should not show the comparison at
-all.
-
-**Display.** Choosing one metric at a time from a dropdown was cumbersome, and
-showing everything at once was too dense, so each source tab holds a metric
-grid. Violin plots replaced box plots to show distribution shape, each tab has
-one shared legend, and the current-subject marker is scoped to the active run —
-an unscoped distribution tells a reviewer nothing about which measurement is
-theirs.
+**Reference comparison is built but disabled.** Comparing a scan against an
+MRIQC reference population is implemented behind a hidden control. Collecting
+that data proved slow and incomplete, and the population distribution turned out
+markedly different from the dataset under review — a comparison that would
+mislead a reviewer more than inform them.
+[#82](https://github.com/nipoppy/qc-studio/issues/82) tracks the cleanup and the
+guard it needs before it returns. The branch document describes that
+investigation in full.
 
 ## 2. Rating Persistence and Test Coverage
 
@@ -270,23 +278,19 @@ Reading the code confirmed it. A rating click never saved itself. It only
 reached the record when the autoplay timer next polled `session_state`, and each
 page advance rotated the widget key, so a click landing after an advance was
 read from a key that no longer belonged to the subject being rated. The rating
-disappeared with no error. Nothing in the save path was broken, which is why
+disappeared with no error, and nothing in the save path was broken, which is why
 ordinary use did not reveal it.
 
-The fix, in `ui/components/qc_viewer.py` and `ui/app.py`, was to stop the timer
-owning persistence:
-
-- the rating saves itself through the widget's `on_change` callback;
-- a guard prevents an empty widget read from overwriting an existing rating;
-- a 0.3-second grace period runs before the poll treats the interval as elapsed,
-  so a click made right on the boundary still lands;
-- missing `qc_task` errors were given clearer messages in `ui/constants.py`.
+The fix was to stop the timer owning persistence: the rating now saves itself
+through the widget's `on_change` callback, with a guard so an empty read cannot
+overwrite an existing value and a short grace period so a click made right on
+the advance boundary still lands.
 
 **The underlying problem is Streamlit.** It is not equipped for this level of
 accuracy. Its model — rerun the whole script on every interaction, keep state in
 widget keys — leaves no reliable moment to capture a value that arrives while
-the page is changing underneath it. Autoplay makes that worse, because the page
-changes on a timer rather than in response to the reviewer. A fix like this one
+the page is changing underneath it, and autoplay makes that worse because the
+page changes on a timer rather than in response to the reviewer. This fix
 narrows the window; it does not remove the class of problem, which is why I
 later argued for browser-level tests.
 
@@ -302,19 +306,17 @@ after a return to the landing page
 unreliable during automatic advance
 ([#77](https://github.com/nipoppy/qc-studio/issues/77)), and autoplay counting
 image loading as review time
-([#72](https://github.com/nipoppy/qc-studio/issues/72)). The first three are
-now closed, fixed by other contributors.
+([#72](https://github.com/nipoppy/qc-studio/issues/72)). The first three are now
+closed, fixed by other contributors.
 
 **There were no tests for the QC viewer.** `ui/tests/test_qc_viewer.py` was 26
 lines covering a single filename helper — nothing exercised rating persistence,
 automatic advance, record saving, pagination, or the countdown. So I wrote them:
-roughly 800 lines covering the advance logic and its grace period, the
-`on_change` path, recording one task and all tasks, rating persistence across an
-advance, pagination buttons, and the countdown timing, including a test that
-would fail under the original bug.
+roughly 800 lines covering those paths, including a test that would fail under
+the original bug.
 
-Writing those tests meant working through the implementation rather than reading
-it, and that is where most of my understanding of this codebase came from. It is
+Writing them meant working through the implementation rather than reading it,
+and that is where most of my understanding of this codebase came from. It is
 also what made the later work possible: the review findings in #95, #83, and #74
 are about the same save, navigation, and session-state paths I had to understand
 in order to test them.
