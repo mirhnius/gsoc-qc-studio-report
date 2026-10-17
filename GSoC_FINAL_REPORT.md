@@ -220,66 +220,68 @@ one shared legend, and the current-subject marker is scoped to the active run �
 an unscoped distribution tells a reviewer nothing about which measurement is
 theirs.
 
-## 2. Rating Persistence
+## 2. Rating Persistence, and What It Taught Me About the Codebase
 
 **Merged:** [PR #76](https://github.com/nipoppy/qc-studio/pull/76), September 2,
 2026, fixing [#73](https://github.com/nipoppy/qc-studio/issues/73).
 
-A reviewer reported that ratings chosen during autoplay sometimes went missing.
-The report was intermittent, so the first useful step was framing it as a timing
-problem: I wrote #73 around the hypothesis that clicks near the automatic-advance
-boundary were the ones being lost.
+A reviewer reported that ratings selected during autoplay were sometimes missing
+from the saved output. The report was intermittent, so the first step was
+framing it as a timing problem: I opened #73 around the hypothesis that clicks
+near the automatic-advance boundary were the ones being lost.
 
-The code confirmed it. A rating click never saved itself; it only reached the
-record when the autoplay timer next polled `session_state`. Each advance rotated
-the widget key, so a click landing after an advance was read from a key that no
-longer belonged to the subject being rated, and the rating disappeared with no
-error. Nothing in the save path was broken, which is why ordinary testing missed
-it.
+Reading the code confirmed it. A rating click never saved itself. It only
+reached the record when the autoplay timer next polled `session_state`, and each
+page advance rotated the widget key, so a click landing after an advance was
+read from a key that no longer belonged to the subject being rated. The rating
+disappeared with no error. Nothing in the save path was broken, which is why
+ordinary use did not reveal it.
 
-```mermaid
-sequenceDiagram
-  autonumber
-  participant R as Reviewer
-  participant W as Rating widget
-  participant T as Autoplay timer
-  participant S as Saved record
-  Note over R,S: Before — only the timer wrote to the record
-  R->>W: clicks PASS
-  T->>T: interval elapses, advances the page
-  Note over W: widget key rotates to the next subject
-  T->>W: polls the previous key
-  W-->>T: empty
-  Note over T,S: rating lost, and nothing errors
-```
+The fix, in `ui/components/qc_viewer.py` and `ui/app.py`, was to stop the timer
+owning persistence:
 
-```mermaid
-sequenceDiagram
-  autonumber
-  participant R as Reviewer
-  participant W as Rating widget
-  participant T as Autoplay timer
-  participant S as Saved record
-  Note over R,S: After — the click owns its own save
-  R->>W: clicks PASS
-  W->>S: on_change writes immediately
-  T->>T: interval plus 0.3s grace
-  T->>S: guard, an empty read cannot overwrite
-  Note over W,S: the rating was already safe
-```
+- the rating saves itself through the widget's `on_change` callback;
+- a guard prevents an empty widget read from overwriting an existing rating;
+- a 0.3-second grace period runs before the poll treats the interval as elapsed,
+  so a click made right on the boundary still lands;
+- missing `qc_task` errors were given clearer messages in `ui/constants.py`.
 
-That made the fix structural. The rating now saves through the widget's
-`on_change` callback, so persistence no longer depends on the timer. Two
-safeguards back it up: a guard preventing an empty read from overwriting an
-existing rating, and a 0.3-second grace period before the poll treats the
-interval as elapsed. Most of the PR is regression tests, since a test that fails
-under the original conditions is the only way to show a timing bug is gone.
+**The underlying problem is Streamlit.** It is not equipped for this level of
+accuracy. Its model — rerun the whole script on every interaction, keep state in
+widget keys — leaves no reliable moment to capture a value that arrives while
+the page is changing underneath it. Autoplay makes that worse, because the page
+changes on a timer rather than in response to the reviewer. A fix like this one
+narrows the window; it does not remove the class of problem, which is why I
+later argued for browser-level tests.
 
-The same investigation surfaced related gaps in notes and partial progress,
-reported as [#11](https://github.com/nipoppy/qc-studio/issues/11),
-[#81](https://github.com/nipoppy/qc-studio/issues/81), and
-[#84](https://github.com/nipoppy/qc-studio/issues/84). All three are closed;
-other contributors implemented those fixes.
+**Looking closely surfaced more.** Working through this part of the codebase
+turned up further problems, which I reported rather than silently worked around:
+notes discarded on forced navigation
+([#84](https://github.com/nipoppy/qc-studio/issues/84)), partial progress lost
+with no way to save it ([#81](https://github.com/nipoppy/qc-studio/issues/81)),
+notes not persisting to the saved TSV
+([#11](https://github.com/nipoppy/qc-studio/issues/11)), autoplay continuing
+after a return to the landing page
+([#78](https://github.com/nipoppy/qc-studio/issues/78)), the IQM panel being
+unreliable during automatic advance
+([#77](https://github.com/nipoppy/qc-studio/issues/77)), and autoplay counting
+image loading as review time
+([#72](https://github.com/nipoppy/qc-studio/issues/72)). The first three are
+now closed, fixed by other contributors.
+
+**There were no tests for the QC viewer.** `ui/tests/test_qc_viewer.py` was 26
+lines covering a single filename helper — nothing exercised rating persistence,
+automatic advance, record saving, pagination, or the countdown. So I wrote them:
+roughly 800 lines covering the advance logic and its grace period, the
+`on_change` path, recording one task and all tasks, rating persistence across an
+advance, pagination buttons, and the countdown timing, including a test that
+would fail under the original bug.
+
+Writing those tests meant working through the implementation rather than reading
+it, and that is where most of my understanding of this codebase came from. It is
+also what made the later work possible: the review findings in #95, #83, and #74
+are about the same save, navigation, and session-state paths I had to understand
+in order to test them.
 
 ## 3. Performance and the Project's First Automated Checks
 
