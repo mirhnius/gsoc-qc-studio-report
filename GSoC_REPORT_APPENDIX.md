@@ -62,62 +62,20 @@ described in [Section 7 of the main report](GSoC_FINAL_REPORT.md#7-upstream-niiv
 | [#10](https://github.com/nipoppy/qc-studio/pull/10), `nikhil153` | Viewer layout and overlay controls. | Asked about height/configuration behavior, reported colorbar stacking, checked the update, and approved. |
 | [#17](https://github.com/nipoppy/qc-studio/pull/17), `laurapiro17` | Documentation typo. | Explained that prior changes had addressed it and closed the superseded PR. |
 | [#20](https://github.com/nipoppy/qc-studio/pull/20), `nikhil153` | Initial pagination work: viewer, pagination, panel layout, and session-state managers. | My first review on the project. Seven inline comments across six files on duplicated functions and helpers, session state initialized twice, a missing `dataset_dir` argument, `panels_data` type handling, empty ratings and notes passed through pagination, and a proposed `normalize_selected_panels()` helper to unify panel keys. Written April 6–8, 2026 and [submitted](https://github.com/nipoppy/qc-studio/pull/20#pullrequestreview-4064027658) October 12, 2026. |
-| [#25](https://github.com/nipoppy/qc-studio/pull/25), `GhazalehManj` | Session manager, cohort helpers, landing/completion pages, and sidebar navigation. | Six inline comments on duplicate handling, session assumptions, display constants, completed uploads, stale Continue QC widgets, and Start Over records. I merged the PR after the follow-up changes. |
+| [#25](https://github.com/nipoppy/qc-studio/pull/25), `GhazalehManj` | Session manager, cohort helpers, landing/completion pages, and sidebar navigation. | [Submitted review](https://github.com/nipoppy/qc-studio/pull/25#pullrequestreview-4397400200) with six inline comments: [silent duplicate compaction](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3330745664), [baseline/session assumptions](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3370144815), [display-length constants](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3370388945), [completed-upload navigation](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3370573536), [Continue QC widget reset](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3370631538), and [Start Over retaining records](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3370687500). Also commented on [smaller, behavior-focused PRs](https://github.com/nipoppy/qc-studio/pull/25#issuecomment-4587917864) and [the dependency on this merge for planned CI/test work](https://github.com/nipoppy/qc-studio/pull/25#issuecomment-4587074842). I merged it after the follow-up changes. |
 | [#38](https://github.com/nipoppy/qc-studio/pull/38), Copilot agent | Montage fixture/documentation terminology. | Approved cleanup and later closed the PR. |
 | [#53](https://github.com/nipoppy/qc-studio/pull/53), `SRSteinkamp` | Keyboard controls and narrow-screen layout. | Raised notes-field shortcut conflicts, Play/Pause coverage, and wrapped button labels. |
 | [#58](https://github.com/nipoppy/qc-studio/pull/58), `manonheff` | Review-duration statistics and plots. | Requested tests, questioned duration correctness, and suggested average-per-subject and grouped-histogram presentation. |
 | [#67](https://github.com/nipoppy/qc-studio/pull/67), `nikhil153` | Documentation cleanup. | Reviewed, approved, and merged. |
 | [#74](https://github.com/nipoppy/qc-studio/pull/74), `GhazalehManj` | Sidebar filtering, navigation, compact labels, and autoplay completion. | Identified filter/completion problems, shared-helper placement, session assumptions, and configuration concerns; approved after the congratulations-page bug and other comments were addressed. |
 | [#83](https://github.com/nipoppy/qc-studio/pull/83), `nikhil153` | Export, checkpoint, upload/resume, filenames, counts, and notes. | Reported path/case mismatches, subject-ID preservation, misleading labels, checkpoint confusion, and autoplay notes behavior. |
-| [#95](https://github.com/nipoppy/qc-studio/pull/95), `nikhil153` | Cohort helpers, session manager, rating widgets, checkpoint lookup, task navigation, filenames, and wildcard paths. | Identified persistence and identity problems; followed up on casing, identifier parsing, and checkpoint/path edge cases; retested task switching and wrong-task checkpoints, then approved. Merged October 8. |
+| [#95](https://github.com/nipoppy/qc-studio/pull/95), `nikhil153` | Cohort helpers, session manager, rating widgets, checkpoint lookup, task navigation, filenames, and wildcard paths. | Identified saved ratings masked by all-`None` widgets, facet-name changes breaking saved matching, checkpoint lookup crossing raters and tasks, and stale task navigation. [Follow-up review](https://github.com/nipoppy/qc-studio/pull/95#pullrequestreview-5408580458) on inconsistent filename casing, `all_tasks` checkpoint lookup, identifiers containing underscores, and absolute wildcard paths rejected by `Path.glob`. On October 6 I tested finishing one task, switching tasks, and uploading a wrong-task checkpoint, then [approved](https://github.com/nipoppy/qc-studio/pull/95#pullrequestreview-5436647028). Only the first task had image data in the samples, limiting image-level checks of the others, so I suggested a visible missing-image warning. Merged October 8. |
 | [#96](https://github.com/nipoppy/qc-studio/pull/96), `nikhil153` | Citation metadata. | Reviewed and approved. Merged October 8. |
-| [#105](https://github.com/nipoppy/qc-studio/pull/105), `michellewang` | Sphinx docs, README/Quickstart, CLI and export conventions, CI, and pre-commit scope. | Verified a strict docs build and demo; reported startup failures and filename inconsistencies; suggested independent docs checks and limiting hooks on sample data. On October 11, asked for the PyBIDS mention to be removed from the session-list docs, since #111 removes PyBIDS session guessing. Open. |
-| [#111](https://github.com/nipoppy/qc-studio/pull/111), `nikhil153` | NIfTI and montage caching for memory use, and removal of PyBIDS-based session guessing. | Submitted a review on October 11 with three design points: two caching styles in two modules, different invalidation rules, and a shared cached dict that is read-only only by convention. Open. |
+| [#105](https://github.com/nipoppy/qc-studio/pull/105), `michellewang` | Sphinx docs, README/Quickstart, CLI and export conventions, CI, and pre-commit scope. | [Submitted review](https://github.com/nipoppy/qc-studio/pull/105#pullrequestreview-5480252267) on October 10 recording a warning-free Sphinx build with `-n -W --keep-going`, demo startup, and checks of CLI flags and export columns against the code. Reported a README startup command missing required arguments, suggested independent documentation CI, and raised pre-commit scope reaching sample data; also flagged access to the built HTML, [saved-filename inconsistencies](https://github.com/nipoppy/qc-studio/pull/105#discussion_r4238816575), missing references, and unused Sphinx extensions. On October 11 asked for the PyBIDS mention to be removed from the session-list docs, since #111 removes PyBIDS session guessing. A structural review, not a cover-to-cover audit. Open. |
+| [#111](https://github.com/nipoppy/qc-studio/pull/111), `nikhil153` | NIfTI and montage caching for memory use, and removal of PyBIDS-based session guessing. | [Submitted review](https://github.com/nipoppy/qc-studio/pull/111#pullrequestreview-5481379082) on October 11 with three design points: two caching styles in two modules; asymmetric invalidation, since the NIfTI cache key includes file modification time and size while the montage cache is keyed only on paths and configuration, so a regenerated figure can stay stale until evicted; and a shared cached dict that is read-only only by docstring, for which I asked for an immutable return value or a test guarding against mutation. A design review, not a test of memory usage. Open, marked WIP. |
 
 These rows record my review and maintenance role. Implementations belong to the
 PRs' authors.
-
-For #25, my [submitted review](https://github.com/nipoppy/qc-studio/pull/25#pullrequestreview-4397400200)
-contained six inline comments. They covered
-[silent duplicate compaction](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3330745664),
-[baseline/session assumptions](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3370144815),
-[display-length constants](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3370388945),
-[completed-upload navigation](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3370573536),
-[Continue QC widget reset](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3370631538),
-and [Start Over retaining records](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3370687500).
-
-I merged the PR after the follow-up changes.
-My additional comments addressed
-[smaller, behavior-focused PRs](https://github.com/nipoppy/qc-studio/pull/25#issuecomment-4587917864)
-and [the dependency on this merge for planned CI/test work](https://github.com/nipoppy/qc-studio/pull/25#issuecomment-4587074842).
-
-For #95, my
-[follow-up review](https://github.com/nipoppy/qc-studio/pull/95#pullrequestreview-5408580458)
-covered inconsistent filename casing, `all_tasks` checkpoint lookup, identifiers
-containing underscores, and absolute wildcard paths. On October 6, I tested
-finishing one task, switching tasks, and uploading a wrong-task checkpoint,
-then [approved the PR](https://github.com/nipoppy/qc-studio/pull/95#pullrequestreview-5436647028).
-Only the first task had image data in the samples, limiting image-level checks
-of the other tasks. I suggested a visible missing-image warning. The PR merged on October 8.
-
-For #105, my October 10
-[submitted review](https://github.com/nipoppy/qc-studio/pull/105#pullrequestreview-5480252267)
-recorded a warning-free Sphinx build with `-n -W --keep-going`, demo startup,
-and checks of CLI flags and export columns. I reported a README startup command
-missing required arguments, suggested independent documentation CI, and raised
-pre-commit scope affecting sample data. Other findings included access to built
-HTML, saved-filename inconsistencies, missing references, and unused Sphinx
-extensions. This was a structural review, not a cover-to-cover audit; the PR
-remains open.
-
-For #111, my October 11
-[submitted review](https://github.com/nipoppy/qc-studio/pull/111#pullrequestreview-5481379082)
-compared the two caches added by the PR. The NIfTI cache key includes file
-modification time and size, but the montage cache is keyed only on paths and
-configuration, so a regenerated figure could remain stale until evicted. I also
-asked for a shared module for limits and key rules, and for an immutable return
-value or a test guarding against mutation of the shared cached dict. This was a
-design review, not a test of memory usage; the PR is open and marked WIP.
 
 ## Appendix D: Merge and Closure Activity
 
