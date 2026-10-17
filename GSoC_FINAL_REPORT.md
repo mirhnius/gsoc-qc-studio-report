@@ -259,40 +259,94 @@ documentation links.
 Detail: [Playwright E2E Branch](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md).
 
 Three bugs I had worked on (#73, #81, #84) shared a shape: the logic was correct
-in isolation, and the failure lived in the interaction between real widgets,
-session state, and Streamlit's rerun cycle. The existing `ui/tests/` suite mocks
-Streamlit, so by construction it cannot see that class of bug. I made that
-argument in #75 before writing any tests.
+in isolation, and the failure lived in the wiring between real widgets, session
+state, and Streamlit's rerun cycle. `ui/tests/` mocks Streamlit out, so by
+construction it cannot see that class of bug. We needed end-to-end tests that
+run automatically, and I made that case in #75 before writing any.
 
-The suite is marked and run separately from the fast tests, because it needs
-browser binaries and a real server, and a test layer that slows the quick
-feedback loop gets abandoned.
+Playwright was new to me, so rather than invent a structure I studied how
+Streamlit's own `e2e_playwright` suite is organised — specifically how it keeps
+tests from breaking when Streamlit's internals change, by wrapping the fragile
+parts so there is one place to fix instead of many. The result is four layers,
+each hiding its mechanics from the one above:
 
-Tests do not need to know how the app starts: fixtures allocate a free port,
-launch it with `streamlit run`, wait on the health endpoint, redirect output to a
-temporary directory so a run cannot touch the repository's `output/`, and tear
-the server down. Selectors and interactions live in one shared module, which
-handles the awkward details once — form-submit buttons behave differently from
-ordinary ones, and alert text can arrive with the leading emoji stripped. Tests
-reference user-facing strings through `ui/constants.py` rather than copying them.
+| Layer | Responsibility |
+| --- | --- |
+| `app_server` fixture | Launches a real QC-Studio process on an OS-assigned free port, polls `/_stcore/health` until it serves, and includes the server log in the failure if startup dies. Module-scoped, with a fresh browser page per test so no session state leaks. |
+| `app` fixture | A browser page already loaded and settled on that server. |
+| `shared/` | Every selector and interaction. `waits.py` handles rerun synchronization; `app_utils.py` finds and drives widgets. |
+| `tests/` | Scenarios, which know about none of the above. |
 
-Synchronization is the hard part. Streamlit reruns the script after an
-interaction, so an assertion made immediately after a click can inspect the
-previous render. Negative assertions are the dangerous case: "the element is
-gone" and "the new render has not arrived" look identical, and the test passes
-for the wrong reason. The waits module centralizes this by waiting for the script
-state to reach `notRunning`.
+**Synchronization is the part that silently breaks tests.** Streamlit reruns the
+whole script on every interaction, so for a few hundred milliseconds the browser
+still shows the previous render. Playwright's retrying hides this most of the
+time, and the case where it doesn't is the dangerous one:
+`expect(error_message).not_to_be_visible()` passes instantly against the stale
+page, before the rerun that would have produced the error — a green test over a
+shipped bug. Instead of guessing with timeouts, the waits ask the app: Streamlit
+publishes `data-test-script-state` on its root element, cycling
+`initial → running → notRunning`, so waiting for `notRunning` means the script
+has finished. The helper also checks the websocket is `CONNECTED` and that no
+loading skeletons remain. Every interaction helper calls it, so a test cannot
+forget to.
 
-I write a specification before each test, recording the screen, why the behavior
-needs a browser, Given/When/Then steps, and the relevant constants. Expected
-behavior then becomes reviewable before any Playwright code exists, which is
-where disagreements are cheap to settle. The 11 specifications cover the risky
-paths — validation, ratings surviving navigation, upload and resume, overwrite
-protection, checkpoints, notes, autoplay. Six scenarios are implemented, and the
-two workflow tests are the browser-level versions of #84 and #72.
+**Tests never call `page.locator()` directly.** Selectors live in one file,
+ordered by robustness: first a widget's explicit `key=`, which Streamlit stamps
+as a stable `st-key-<key>` class and which survives copy changes; then a test ID
+narrowed by visible label, which is what Streamlit's own suite uses; raw CSS
+last. The test IDs were taken from Streamlit's suite, and the two I had to infer
+are marked `UNVERIFIED` in the source with a note on how to re-check them.
 
-Next: tighten the rerun waits, track overwritten exports, and implement the
-save/resume scenarios the specifications already describe.
+That wrapper layer is also where Streamlit's quirks are absorbed once rather
+than in every test: `st.text_area` commits on blur rather than on keystroke, so
+the helper fills and then presses Tab; checkboxes render their real `<input>`
+off-screen, so the helper clicks the visible `<label>` and lets the browser
+forward the event, because dispatching to the hidden input changes the DOM
+without reaching session state; buttons with a `help=` tooltip render a second
+hidden `<button>`, so the locator filters to `:visible`; and `st.error` strips a
+leading emoji into a separate icon, so asserting on a constant authored with
+that emoji needs it stripped first. Every test runs in both Chromium and
+Firefox, deliberately — a suite leaning this hard on Streamlit's DOM cannot
+assume a selector working in one engine works in the other.
+
+One fixture detail worth noting: the default configuration has a single
+participant, which cannot distinguish a real bug from a one-subject edge case —
+autoplay stopping at the end of a one-subject cohort looks identical to a pause
+actually working. So there is a two-subject configuration for specs that need
+genuine navigation. Output goes to a temporary directory the tests own, and an
+`output_files` fixture snapshots it beforehand so an export assertion sees only
+what that test wrote.
+
+**Spec-driven, as a concept.** I was curious about spec-driven development, and
+this is the idea rather than the full method: a Markdown spec is written before
+the test code. The template asks for the screen, the category, the priority,
+and — the question that does the most work — what wiring would break unnoticed
+if this test did not exist, with a note that pure logic belongs in `ui/tests/`
+instead because that is faster and more precise. Then Given/When/Then, where
+"Then" must be something visible on screen; the template contrasts "the rating
+is saved to session state", which is invisible and untestable, with "the PASS
+button renders as selected". It also asks which `ui/constants.py` keys the test
+should assert on, so strings are imported rather than hardcoded.
+
+The intended workflow for a contributor is: fill in the spec with the scenario
+and what you think matters, hand it to your AI assistant of choice to review and
+improve the spec, let it implement the test, then run it yourself and judge
+whether it does what you wanted. Writing the spec first makes expected behavior
+reviewable while disagreements are still cheap, and the human stays the one who
+decides the test is right.
+
+For that to work across contributors there has to be shared agreement on
+conventions, which is why the branch commits skills for writing tests and for
+reviewing code, alongside the e2e orientation. They are committed rather than
+local so that anyone using an AI assistant on this repo gets the same behavior
+instead of each contributor's assistant inventing its own. Their scope is still
+open for discussion with the maintainer and could be split into a separate PR.
+
+The 11 specifications cover the risky paths — validation, ratings surviving
+navigation, upload and resume, overwrite protection, checkpoints, notes,
+autoplay. Six scenarios are implemented, and the two workflow tests are the
+browser-level versions of #84 and #72. Next: tighten the rerun waits, track
+overwritten exports, and implement the save/resume specs.
 
 ## 5. Evidence Bundles: An LLM Companion for QC
 
