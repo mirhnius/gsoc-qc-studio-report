@@ -153,37 +153,43 @@ upstream Niivue report.
 [#23](https://github.com/nipoppy/qc-studio/issues/23).
 Full detail: [IQM Viewer Branch](IQM_VIEWER_BRANCH_EXPLANATION.md).
 
-Reviewers could see images but not the numbers MRIQC produces for them. My first
-version did what #12 asked: a metric dropdown, a dataset distribution, and a
-reference population from the MRIQC Web API. Three problems it exposed drove the
-rest of the design.
+Reviewers could see images but not the numbers MRIQC produces for them.
 
-**The reference data was not usable.** Fetching from the API ran for two days
-without completing, and the result was too large to commit. I moved to cached,
-filtered Parquet, then had to clip extreme values that were stretching the axes.
-Loading the data was not the same as displaying it honestly, so I filed
-[#82](https://github.com/nipoppy/qc-studio/issues/82) and hid the comparison
-mode, keeping the infrastructure behind it. A plausible but wrong reference curve
-is worse for a reviewer than none.
+**From MRIQC-only to any pipeline.** The first version supported MRIQC across
+its modalities, configured by a top-level setting that hardcoded groupings such
+as `t1w` and `bold`. That made the panel an MRIQC add-on rather than a property
+of a QC task, so I redesigned it around a per-task `iqm_path` list — mirroring
+the existing `svg_montage_path` pattern — pointing at individual JSON files.
+A task can now declare several sources, each shown in its own tab, so a pipeline
+other than MRIQC is supported with its own metrics, and different metric sets,
+version-suffixed pipeline names, and modalities can be displayed. MRIQC-like
+sources use curated metric groups; others fall back to generic per-column
+display, so an unfamiliar pipeline is degraded rather than unsupported. DWI
+support then followed from extending the group registry, with no new display
+code — the practical test of whether the refactor was worth doing.
 
-**One dropdown per metric did not match how reviewers work.** I moved to a
-metric grid per source tab, replaced box plots with violins, and scoped the
-current-subject marker to the active run — an unscoped distribution tells a
-reviewer nothing about which measurement is theirs.
+**Reference data: built, but not trustworthy yet.** To compare a scan against a
+population, I wrote the code to collect reference distributions from the MRIQC
+endpoint. It ran for two days without finishing, so I used the partial download
+as-is, and only for the structural modality. The loader caches filtered Parquet
+with a seven-day refresh and normalizes scanner metadata, so a comparison is
+drawn against similar acquisitions rather than everything.
 
-**The configuration encoded MRIQC assumptions.** A top-level setting hardcoded
-`t1w` and `bold` groupings, making the feature an MRIQC add-on rather than a
-property of a QC task. I replaced it with a per-task `iqm_path` list mirroring
-the existing `svg_montage_path` pattern, so it would be predictable to anyone
-who knew the project. DWI support then followed from extending the group
-registry, with no new display code — the practical test of whether the refactor
-paid off.
+The problem was what the data showed: the MRIQC population distribution was
+markedly different from the dataset being reviewed. A comparison like that is
+not informative, and could mislead a reviewer into doubting a perfectly good
+scan. So the capability exists but is disabled, and
+[#82](https://github.com/nipoppy/qc-studio/issues/82) tracks the cleanup and
+testing it needs. Part of the fix is a rule rather than more data: if the two
+distributions are that far apart, the viewer should not show the comparison at
+all.
 
-Review also moved the module boundaries, taking reference loading out of
-`data_loaders.py` into its own module. I added tests for metric grouping, source
-loading, widget state, and plot rendering, plus sample MRIQC inputs and a DWI
-test configuration.
-
+**Display.** Choosing one metric at a time from a dropdown was cumbersome, and
+showing everything at once was too dense, so each source tab holds a metric
+grid. Violin plots replaced box plots to show distribution shape, each tab has
+one shared legend, and the current-subject marker is scoped to the active run —
+an unscoped distribution tells a reviewer nothing about which measurement is
+theirs.
 
 ## 2. Rating Persistence
 

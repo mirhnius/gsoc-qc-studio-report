@@ -22,65 +22,90 @@ filtering and display).
 
 ## How the Design Evolved
 
-The first version did what #12 asked for: IQM distributions, a reference-data
-fetching script, and reference-comparison plots, with a dropdown for choosing a
-metric. Three problems that version exposed drove the rest of the design.
+### From MRIQC-only to pipeline-agnostic
 
-### 1. The reference data was not usable as delivered
+The first version supported MRIQC across its modalities, driven by a top-level
+`iqm_distributions` setting that hardcoded groupings such as `t1w` and `bold`.
+Review raised that the modality should follow from the QC task rather than being
+chosen in the UI, which pointed at the deeper problem: the feature was
+structured as an MRIQC add-on instead of a property of a QC task.
 
-Fetching the MRIQC Web API reference population ran for two full days without
-completing, and the partial download was too large to commit to the repository.
-I rewrote the lookup to read cached, filtered Parquet rather than querying the
-API per view, which made the panel usable at all. Extreme values in the
-population then stretched the plot axes far enough to make the dataset
-distribution unreadable, so I added clipping for reference outliers.
+I replaced that setting with a per-task `iqm_path` list, deliberately mirroring
+the existing `svg_montage_path` pattern so the configuration would be
+predictable to anyone who already knew the project. The list points at
+individual JSON files, which is what makes the panel pipeline-agnostic: a task
+can declare several sources, each rendered in its own tab, so a pipeline other
+than MRIQC is supported with its own metrics. Across tasks and sources the
+viewer accommodates different metric sets, version-suffixed pipeline names
+(matched in `is_mriqc_pipeline`), and different modalities.
 
-The conclusion was that loading the data successfully is not the same as
-displaying it honestly. Rather than ship a comparison I could not vouch for, I
-filed [#82](https://github.com/nipoppy/qc-studio/issues/82), hid the
-"Dataset + reference" mode, and left the infrastructure in place behind it. A
-plausible-looking but wrong reference curve is worse for a reviewer than no
-curve at all.
+MRIQC-like sources use curated metric groups; anything else falls back to
+generic per-column display, so an unfamiliar pipeline is degraded rather than
+unsupported. Multi-row tables render as distributions, while a single-row CSV or
+JSON renders as a metrics table. DWI support then followed from extending the
+group registry and inferring the modality, with no new display code — the
+practical test of whether the refactor was worth doing.
 
-### 2. A metric dropdown did not match how reviewers work
+### Reference data
 
-Review feedback was that selecting metrics one at a time was cumbersome, while
-an all-IQM view was too dense to read. I tried an overview/detail layout with a
-scrollable overview, then simplified to a metric grid inside each source tab so
-a reviewer sees the whole picture first.
+Comparing a scan against a population needs that population, so I wrote the
+code to collect reference distributions from the MRIQC endpoint
+(`scripts/fetch_mriqc_reference.py`, documented in
+`scripts/fetch_mriqc_reference.md`).
 
-Plot changes followed from the same concern. Box plots became violins, which
-show the shape of a distribution rather than just its quartiles. Each tab got
-one shared legend with consistent shapes and colours. The current-subject
-marker was scoped to the active run, with hover text naming it — an unscoped
-distribution tells a reviewer nothing about which measurement belongs to the
-scan in front of them, and an early review caught exactly that case, where the
-highlighted subject was not visible at all.
+Collecting it was the first problem. The download ran for two full days without
+finishing and the result was large, so I used the partial data as-is and only
+for the structural modality. The loader in `ui/utils/reference_data.py` reads
+filtered Parquet and caches it with a seven-day TTL
+(`CACHE_TTL_SECONDS = 7 * 24 * 60 * 60`), capped at `MAX_REFERENCE_ROWS =
+50_000`. It also normalizes scanner metadata before filtering — manufacturer
+aliases (`siemens healthineers` → `siemens`, `ge medical systems` → `ge`) and
+field-strength aliases (`3.0T` → `3`) — so a comparison is drawn against
+similar acquisitions rather than against everything. The host itself is not
+committed; `REFERENCE_DATA_URL` comes from the environment and is resolved at
+call time rather than import time so it cannot go stale relative to `.env`
+loading.
 
-### 3. The configuration encoded MRIQC assumptions
+The real problem was what the data showed. The MRIQC population distribution
+was markedly different from the distribution of the dataset being reviewed. A
+comparison between two distributions that far apart is not informative, and is
+actively misleading: a reviewer could doubt a perfectly good scan because it sits
+outside a population it was never comparable to. Extreme values also stretched
+the plot axes enough to make the dataset distribution itself hard to read, which
+clipping only partly addressed.
 
-The original top-level `iqm_distributions` setting hardcoded groupings such as
-`t1w` and `bold`. Review raised that the modality should follow from the QC task
-rather than being chosen in the UI, which pointed at the deeper problem: the
-feature was structured as an MRIQC add-on instead of a property of a QC task.
+So the capability is built and disabled. The "Dataset + reference" mode is
+hidden in the merged UI, the infrastructure stays behind it, and
+[#82](https://github.com/nipoppy/qc-studio/issues/82) tracks the cleanup and
+testing needed before it returns. Part of that fix is a rule rather than more
+data: if the two distributions differ that much, the viewer should not show the
+comparison at all. Loading reference data successfully is not the same as
+displaying it honestly.
 
-I replaced it with a per-task `iqm_path` list, deliberately mirroring the
-existing `svg_montage_path` pattern so the configuration would be predictable to
-anyone who already knew the project. Each source became its own tab. MRIQC-like
-sources use curated metric groups; others fall back to generic per-column
-display, so a non-MRIQC pipeline is degraded rather than unsupported. DWI
-support then followed from extending the group registry and inferring the
-modality, with no new display code — the practical test of whether the refactor
-was worth doing.
+### Display
+
+Choosing one metric at a time from a dropdown was cumbersome, and an all-IQM
+view was too dense to read. I tried an overview/detail layout with a scrollable
+overview, then simplified to a metric grid inside each source tab so a reviewer
+sees the whole picture first.
+
+Plot changes followed the same concern. Box plots became violins, which show
+the shape of a distribution rather than just its quartiles. Each tab got one
+shared legend with consistent shapes and colours. The reference-comparison
+design used split violins with dataset and reference on opposing sides. The
+current-subject marker was scoped to the active run, with hover text naming it
+— an unscoped distribution tells a reviewer nothing about which measurement
+belongs to the scan in front of them, and an early review caught exactly that,
+where the highlighted subject was not visible at all.
 
 ### Module boundaries
 
 Review also moved the boundaries. I had put the reference maps and download
 helpers in `ui/utils/data_loaders.py`; the argument against it was that a loader
 module should not import `streamlit` and `requests` or hold configuration maps.
-I agreed and moved both into a dedicated `ui/utils/reference_data.py`. A later
-round caught that `URL_PARENT` was resolved at import time, before the app's
-environment was in place, so resolution moved to call time.
+I agreed and moved both into a dedicated `ui/utils/reference_data.py`, which is
+uncached by design — the caching lives with the viewer, in
+`iqm_viewer.load_reference_iqm_for_subject`.
 
 ## Viewer Behavior
 
@@ -111,15 +136,6 @@ scanner-metadata sidecar lookup (wrong-subject fallback, derivatives paths,
 switching subjects, and duplicate MRIQC tab labels. Others fixed stale viewer
 tests, a display-mode radio hidden by the scrollable montage container, runtime
 reference URL resolution, and lazy creation of the reference cache.
-
-## Reference Data
-
-During development the reference data proved large, API access slow, and extreme
-values stretched plot axes, so loading it successfully was not enough to make
-its display trustworthy. The helpers and fetching script exist, but the
-comparison control is hidden until #82 is resolved. The evidence-bundle
-experiments use the same reference percentiles and z-scores and depend on the
-same cleaning.
 
 ## Tests
 
