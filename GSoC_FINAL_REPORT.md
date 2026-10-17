@@ -19,21 +19,25 @@
 
 **The work**
 
-| | Section | What it covers |
-| --- | --- | --- |
-| 1 | [IQM Viewer](#1-iqm-viewer) | Quantitative evidence beside the images, and why the reference comparison is disabled |
-| 2 | [Rating Persistence and Test Coverage](#2-rating-persistence-and-test-coverage) | The bug that silently lost ratings, what it revealed about Streamlit, and the tests that followed |
-| 3 | [Caching and Continuous Integration](#3-caching-and-continuous-integration) | Montage caching, and the project's first automated checks |
-| 4 | [Playwright Browser Testing](#4-playwright-browser-testing) | A browser-level test suite and the spec-first workflow around it |
-| 5 | [Evidence Bundles for LLM-Assisted QC](#5-evidence-bundles-for-llm-assisted-qc) | Packaging QC evidence for a model as a reviewer's companion |
-| 6 | [Code Review](#6-code-review) | Findings across 14 PRs by other contributors |
-| 7 | [Upstream Niivue Contribution](#7-upstream-niivue-contribution) | A dependency gap reported and fixed upstream |
+- [1. IQM Viewer](#1-iqm-viewer) — quantitative evidence beside the images
+- [2. Rating Persistence and Test Coverage](#2-rating-persistence-and-test-coverage)
+  — the bug that silently lost ratings, and the tests that followed
+- [3. Caching and Continuous Integration](#3-caching-and-continuous-integration)
+  — montage caching, and the project's first automated checks
+- [4. Playwright Browser Testing](#4-playwright-browser-testing) — a
+  browser-level test suite and its spec-first workflow
+- [5. Evidence Bundles for LLM-Assisted QC](#5-evidence-bundles-for-llm-assisted-qc)
+  — packaging QC evidence for a model as a reviewer's companion
+- [6. Code Review](#6-code-review) — findings across 14 PRs by other
+  contributors
+- [7. Upstream Niivue Contribution](#7-upstream-niivue-contribution) — a
+  dependency gap reported and fixed upstream
 
 **Handoff**
 
-- [What I Learned](#what-i-learned)
-- [Where This Leaves QC-Studio](#where-this-leaves-qc-studio) — what the work
-  adds up to
+- [What I Learned](#what-i-learned) — what the work taught me
+- [Where This Leaves QC-Studio](#where-this-leaves-qc-studio) — what it adds
+  up to
 - [Next Steps](#next-steps) — open work, with entry points
 - [About This Report](#about-this-report) — how the records were checked
 
