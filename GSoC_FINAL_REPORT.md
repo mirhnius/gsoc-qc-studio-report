@@ -294,7 +294,7 @@ two workflow tests are the browser-level versions of #84 and #72.
 Next: tighten the rerun waits, track overwritten exports, and implement the
 save/resume scenarios the specifications already describe.
 
-## 5. Evidence Bundles for LLM-Assisted QC
+## 5. Evidence Bundles: An LLM Companion for QC
 
 **Experimental:** [`evidence_bundle` branch](https://github.com/nipoppy/qc-studio/tree/evidence_bundle),
 issues [#24](https://github.com/nipoppy/qc-studio/issues/24),
@@ -302,40 +302,50 @@ issues [#24](https://github.com/nipoppy/qc-studio/issues/24),
 [#40](https://github.com/nipoppy/qc-studio/issues/40).
 Detail: [Evidence Bundle Branch](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md).
 
-The proposal's AI panel assumed pre-generated summaries but left the harder
-question open: what does a model need to see to say anything defensible about a
-scan? I worked backwards from how a human reviews, which is never from a bare
-list of numbers. A reviewer reads a metric against context — what it means, how
-the scan compares with a population, how much weight the measurement deserves.
+**The purpose was a companion, not an automated rater.** Deciding whether a scan
+passes is a hard problem, and the right tool for it would be a model trained for
+that task — a classifier or a deep-learning model — not a general language model.
+Even purpose-trained models are not reliably successful at it, so asking an LLM
+for the final verdict is the wrong use of it. What an LLM can usefully do is
+point out the possible issues in a scan and say what to follow up on: what to
+look at next, and what the reviewer should judge for themselves. The decision
+stays with the human. That framing shaped everything in the design.
 
-So the package carries that context explicitly. Helpers load BIDS and scanner
-metadata, the scan's MRIQC metrics, and reference tables, filter reference rows
-by scanner metadata, and compute percentiles and z-scores. Each metric is paired
-with an interpretation, its caveats, a direction of concern, and an evidence
-strength. Rather than let the model choose what to look at, the builder
-highlights metrics flagged as important or beyond the 10th or 90th percentile or
-an absolute z-score of 1.5 — deliberately simple rules, so what the model was
-shown can be reconstructed afterwards.
+**What the package contains.** For one subject and session, the builder assembles
+a Markdown file holding the IQMs that matter — those that are statistical
+outliers, plus those known to be important for that modality — the statistics
+around each one, and the instructions telling the model how to behave. The
+per-metric context comes from a dictionary I built by extracting the MRIQC
+documentation with Codex: what each metric means, which direction is concerning,
+and when it is informative. So a metric reaches the model with its interpretation
+attached, instead of as a bare number.
 
-The output is constrained and validated: a schema requiring decision,
-confidence, summary, flagged metrics, reasons, and recommended follow-up, checked
-with Pydantic, with both the package and the response kept so a failure can be
-traced to the evidence that produced it.
+**The intended product.** On starting a session, a batch of subjects would be
+sent to the model, and each subject's summary of possible problems and suggested
+next steps would be shown to the reviewer as a pop-up when they reach that
+subject. Summarization first; a chat interface for asking follow-up questions
+about that subject's data would come later.
 
-The limiting factor was infrastructure, not design. Iterating on open-weight
-models locally was not possible on my hardware: MPS failed on memory and
-allocation, the 4B model had to run on CPU slowly enough to discourage repeated
-runs, and larger models were out of reach. What remained were models small enough
-to test the pipeline but too small for the task, plus cloud models for the
-IQM-only text experiments. I treated that as a result worth recording: this line
-of work needs GPU infrastructure before an evaluation is meaningful.
+**Where it stopped.** The text stage worked: the Claude API read the Markdown
+package and returned a structured response, validated with Pydantic against a
+schema requiring a decision, confidence, summary, flagged metrics, reasons, and
+recommended follow-up. Both the package and the response are kept, so a result
+can be traced to the evidence that produced it. The next step was adding images,
+and [#40](https://github.com/nipoppy/qc-studio/issues/40) works through the
+options for which parts of a volume to send. That step needed the local
+vision model the project intended to use, and I could not run it on my own
+machine — MPS failed on memory and allocation, and the CPU fallback was too slow
+to iterate on — while the server for it was not yet available. So the work
+stopped there rather than at a design dead end.
 
-The findings themselves: across three MR-ART acquisitions of one subject the
-responses were `uncertain`, `uncertain`, and `fail`, with the clearly degraded
-scan easiest to call. More usefully, the local runs produced schema-valid JSON
-that still confused metric values with percentiles and flagged metrics
-contradicting its own prose. Format validity and correct reasoning are separate
-problems, and only the first is cheap to check automatically.
+**What the experiments showed.** Across three MR-ART acquisitions of one subject
+the responses were `uncertain`, `uncertain`, and `fail`, with the clearly
+degraded scan the easiest to call. More usefully, the small local models returned
+schema-valid JSON that still confused metric values with percentiles and flagged
+metrics contradicting their own prose. Format validity and correct reasoning are
+separate problems, and only the first is cheap to check automatically — which is
+the strongest argument for keeping this a companion that surfaces things to
+check, rather than anything that produces a rating.
 
 ## 6. Code Review and Workflow Testing
 
