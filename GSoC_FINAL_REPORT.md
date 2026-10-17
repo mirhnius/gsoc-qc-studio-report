@@ -2,7 +2,7 @@
 
 **Contributor:** Niusha ([mirhnius](https://github.com/mirhnius))  
 **Project:** [QC-Studio](https://github.com/nipoppy/qc-studio)  
-**Status checked:** October 12, 2026
+**Contribution period:** April–October 2026 · **Status checked:** October 17, 2026
 
 ---
 
@@ -42,7 +42,11 @@
 - [About This Report](#about-this-report) — how the records were checked
 
 Full records of every PR, issue, review, merge, and closure are in the
-[appendices](GSoC_REPORT_APPENDIX.md).
+[appendices](GSoC_REPORT_APPENDIX.md). To run QC-Studio yourself, the
+[Quickstart](https://github.com/nipoppy/qc-studio/blob/main/docs/source/overview/quickstart.md)
+walks through the bundled demo, and
+[Configuration](https://github.com/nipoppy/qc-studio/blob/main/docs/source/guides/configuration.md)
+covers pointing it at your own data.
 
 ---
 
@@ -105,6 +109,17 @@ data in an interactive web app, to support 3D MRI (NIfTI), 2D image montages,
 and IQM metrics, and to make structured QC ratings possible through a clean,
 intuitive interface.
 
+### Where QC-Studio stood at the start
+
+When this project began, QC-Studio was an early concept rather than a working
+tool: prototype code, no real users, and nothing dependable enough for a review
+session anyone relied on. The pieces existed in outline — a viewer, a way to
+record a rating — but not as something a rater could be handed.
+
+By the end of the summer it was being used on a real dataset by people who were
+not its developers. It is still in progress, and this report is explicit about
+which parts work, which are built but disabled, and which remain open.
+
 ### What this project set out to add
 
 Two things follow from that motivation. First, a reviewer needs quantitative
@@ -156,7 +171,7 @@ share of the code other contributors added.
   integration, production outlier detection, and the AI-summary dashboard panel.
   The next section explains why the priorities changed.
 
-| Activity | Count (October 12, 2026) |
+| Activity | Count (October 17, 2026) |
 | --- | --- |
 | PRs authored | 9: 6 merged, 2 open drafts, 1 closed prototype |
 | Issues created in QC-Studio | 21: 9 closed, 12 open |
@@ -569,7 +584,7 @@ evaluation are natural follow-ons to the IQM viewer and evidence-bundle work.
 
 ## About This Report
 
-Counts and status are as of October 12, 2026, checked against the repository's
+Counts and status are as of October 17, 2026, checked against the repository's
 PR, issue, review, merge, and closure history. The original proposal summary,
 the PPMI onboarding and its outcome, and the hardware limits on open-weight
 model experiments come from my own records rather than that history. Where a fix
