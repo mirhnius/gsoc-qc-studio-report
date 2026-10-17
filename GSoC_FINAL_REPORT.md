@@ -20,8 +20,9 @@
 [6. Code Review](#6-code-review) ·
 [7. Upstream Niivue Contribution](#7-upstream-niivue-contribution)
 
-**Handoff** — [What I Learned](#what-i-learned) · [Next Steps](#next-steps) ·
-[About This Report](#about-this-report)
+**Handoff** — [What I Learned](#what-i-learned) ·
+[Where This Leaves QC-Studio](#where-this-leaves-qc-studio) ·
+[Next Steps](#next-steps) · [About This Report](#about-this-report)
 
 Each section of the work links to a longer technical document for its branch.
 Full records of every PR, issue, review, merge, and closure are in the
