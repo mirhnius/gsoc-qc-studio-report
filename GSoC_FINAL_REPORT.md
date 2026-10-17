@@ -8,21 +8,34 @@
 
 ### Contents
 
-**Context** — [Background and Goals](#background-and-goals) ·
-[Summary of Contributions](#summary-of-contributions) ·
-[How the Project Evolved](#how-the-project-evolved)
+**Context**
 
-**The work** — [1. IQM Viewer](#1-iqm-viewer) ·
-[2. Rating Persistence and Test Coverage](#2-rating-persistence-and-test-coverage) ·
-[3. Caching and Continuous Integration](#3-caching-and-continuous-integration) ·
-[4. Playwright Browser Testing](#4-playwright-browser-testing) ·
-[5. Evidence Bundles for LLM-Assisted QC](#5-evidence-bundles-for-llm-assisted-qc) ·
-[6. Code Review](#6-code-review) ·
-[7. Upstream Niivue Contribution](#7-upstream-niivue-contribution)
+- [Background and Goals](#background-and-goals) — the QC problem, what
+  QC-Studio does, and what I proposed to add
+- [Summary of Contributions](#summary-of-contributions) — what I delivered,
+  with counts
+- [How the Project Evolved](#how-the-project-evolved) — why the priorities
+  changed partway through
 
-**Handoff** — [What I Learned](#what-i-learned) ·
-[Where This Leaves QC-Studio](#where-this-leaves-qc-studio) ·
-[Next Steps](#next-steps) · [About This Report](#about-this-report)
+**The work**
+
+| | Section | What it covers |
+| --- | --- | --- |
+| 1 | [IQM Viewer](#1-iqm-viewer) | Quantitative evidence beside the images, and why the reference comparison is disabled |
+| 2 | [Rating Persistence and Test Coverage](#2-rating-persistence-and-test-coverage) | The bug that silently lost ratings, what it revealed about Streamlit, and the tests that followed |
+| 3 | [Caching and Continuous Integration](#3-caching-and-continuous-integration) | Montage caching, and the project's first automated checks |
+| 4 | [Playwright Browser Testing](#4-playwright-browser-testing) | A browser-level test suite and the spec-first workflow around it |
+| 5 | [Evidence Bundles for LLM-Assisted QC](#5-evidence-bundles-for-llm-assisted-qc) | Packaging QC evidence for a model as a reviewer's companion |
+| 6 | [Code Review](#6-code-review) | Findings across 14 PRs by other contributors |
+| 7 | [Upstream Niivue Contribution](#7-upstream-niivue-contribution) | A dependency gap reported and fixed upstream |
+
+**Handoff**
+
+- [What I Learned](#what-i-learned)
+- [Where This Leaves QC-Studio](#where-this-leaves-qc-studio) — what the work
+  adds up to
+- [Next Steps](#next-steps) — open work, with entry points
+- [About This Report](#about-this-report) — how the records were checked
 
 Each section of the work links to a longer technical document for its branch.
 Full records of every PR, issue, review, merge, and closure are in the
@@ -184,9 +197,9 @@ Section 5 describes what this allowed and what it ruled out. The work therefore
 stopped at a sandbox, which is an honest finding about what this line of research
 needs rather than a result I could extend by trying harder.
 
-| Original goal | What I built | Where it stands |
+| Original goal | What I did | Where it stands |
 | --- | --- | --- |
-| Nipoppy-integrated architecture | Per-task IQM source configuration, adaptation of the viewer to pagination, and reviews of cohort navigation, record identity, and resume behavior in others' PRs. | Configuration and integration work is in the app. Full `DatasetLayout` and `manifest.tsv` integration is future work; pagination implemented by others is credited to them. |
+| Nipoppy-integrated architecture | **I did not build this.** That effort went into reliability instead, because that is what the project needed: reviewing 14 PRs on the save, resume, filtering, and navigation paths, catching defects before they reached raters, and filing 21 issues on what I found. | `DatasetLayout` and `manifest.tsv` integration remain open for a future contributor. Pagination was implemented by other contributors and is credited to them. |
 | IQM distributions and outlier detection | Merged IQM viewer with dataset distributions, scan-level tables, multiple sources, DWI support, and tests; reference-data infrastructure; metric highlighting in the evidence sandbox. | Dataset IQM panel is live. Reference comparison is built and will be re-enabled once reference data is cleaned (#82). Production outlier detection builds on the sandbox rules. |
 | AI summaries and evaluation | Structured evidence packages, model experiment scripts, response-schema validation, and findings on cloud and local models. | A working sandbox with documented findings. Blocked from going further by the lack of infrastructure for open-weight models; dashboard integration and a larger evaluation need that compute first. |
 
