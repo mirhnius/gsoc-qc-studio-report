@@ -3,7 +3,6 @@
 ## Main files
 - [GSoC_FINAL_REPORT.md](GSoC_FINAL_REPORT.md): main report
 - [GSoC_REPORT_APPENDIX.md](GSoC_REPORT_APPENDIX.md): contribution tables and evidence
-- [GSoC_CONTRIBUTION_DOSSIER.md](GSoC_CONTRIBUTION_DOSSIER.md): comment-level review detail
 
 ## Supporting explanations
 - [EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md)

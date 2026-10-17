@@ -345,8 +345,7 @@ I combined code reading with manual checks of real review sessions, focusing on
 whether ratings and notes survive navigation, filtering, saving, and resuming.
 Where possible I retested fixes before approving. Implementations in other
 contributors' PRs are theirs; these are my review findings. Comment-level records
-are in the [review detail](GSoC_CONTRIBUTION_DOSSIER.md) and
-[appendix](GSoC_REPORT_APPENDIX.md#appendix-c-review-and-comment-activity-on-others-prs).
+are in [Appendix C](GSoC_REPORT_APPENDIX.md#appendix-c-review-and-comment-activity-on-others-prs).
 
 | PR | What I found |
 | --- | --- |
@@ -444,7 +443,7 @@ request.
 ## More Detail
 
 [Appendices](GSoC_REPORT_APPENDIX.md) (all PRs, issues, reviews, merges, and
-closures) · [Review and triage detail](GSoC_CONTRIBUTION_DOSSIER.md) ·
+closures) ·
 [IQM viewer](IQM_VIEWER_BRANCH_EXPLANATION.md) ·
 [Playwright](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md) ·
 [Evidence bundles](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md)

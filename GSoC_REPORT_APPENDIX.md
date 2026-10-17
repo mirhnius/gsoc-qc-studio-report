@@ -183,7 +183,6 @@ design review, not a test of memory usage; the PR is open and marked WIP.
 - [IQM explanation](IQM_VIEWER_BRANCH_EXPLANATION.md).
 - [Playwright explanation](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md).
 - [Evidence-bundle explanation](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md).
-- [Review and triage detail](GSoC_CONTRIBUTION_DOSSIER.md).
 
 How this inventory was checked is described in
 [About This Report](GSoC_FINAL_REPORT.md#about-this-report).
