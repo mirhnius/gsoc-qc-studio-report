@@ -6,18 +6,30 @@
 
 ---
 
-**How to read this.** [Background](#background) and
-[Project Goals](#project-goals) set out the problem and what I set out to build.
-[Summary](#summary) is the short version of what I delivered, and
-[How the Project Evolved](#how-the-project-evolved) explains why the priorities
-changed. Sections 1–7 cover each piece of work; each links to a longer technical
-document for its branch. [Next Steps](#next-steps) is the handoff. Full records
-of every PR, issue, review, merge, and closure are in the
+### Contents
+
+**Context** — [Background and Goals](#background-and-goals) ·
+[Summary of Contributions](#summary-of-contributions) ·
+[How the Project Evolved](#how-the-project-evolved)
+
+**The work** — [1. IQM Viewer](#1-iqm-viewer) ·
+[2. Rating Persistence and Test Coverage](#2-rating-persistence-and-test-coverage) ·
+[3. Caching and Continuous Integration](#3-caching-and-continuous-integration) ·
+[4. Playwright Browser Testing](#4-playwright-browser-testing) ·
+[5. Evidence Bundles for LLM-Assisted QC](#5-evidence-bundles-for-llm-assisted-qc) ·
+[6. Code Review](#6-code-review) ·
+[7. Upstream Niivue Contribution](#7-upstream-niivue-contribution)
+
+**Handoff** — [What I Learned](#what-i-learned) · [Next Steps](#next-steps) ·
+[About This Report](#about-this-report)
+
+Each section of the work links to a longer technical document for its branch.
+Full records of every PR, issue, review, merge, and closure are in the
 [appendices](GSoC_REPORT_APPENDIX.md).
 
 ---
 
-## Background
+## Background and Goals
 
 Neuroimaging workflows produce a wide variety of artifacts — volumes, surfaces,
 networks, tables, figures, and summary metrics — and these often need to be
@@ -58,20 +70,20 @@ flowchart LR
   class I,M,D,X mine
 ```
 
-The application's stated goals are to visualize both raw and processed
-neuroimaging data in an interactive web app, to support 3D MRI (NIfTI), 2D
-image montages, and IQM metrics, and to make structured QC ratings possible
-through a clean, intuitive interface.
+The application's stated goals are to visualize raw and processed neuroimaging
+data in an interactive web app, to support 3D MRI (NIfTI), 2D image montages,
+and IQM metrics, and to make structured QC ratings possible through a clean,
+intuitive interface.
 
-## Project Goals
+### What this project set out to add
 
-Two things follow from that motivation and shaped this GSoC project. First, a
-reviewer needs quantitative evidence next to the images, because judging a scan
-by eye alone discards the measurements a pipeline such as MRIQC has already
-produced. Second, and less obvious until the application is used on a real
-dataset, the review session itself has to be dependable: a rating or a note that
-does not survive navigation, automatic advance, saving, or resuming is worse than
-no tool at all, because the reviewer cannot tell that anything was lost.
+Two things follow from that motivation. First, a reviewer needs quantitative
+evidence next to the images, because judging a scan by eye alone discards the
+measurements a pipeline such as MRIQC has already produced. Second, and less
+obvious until the application is used on a real dataset, the review session
+itself has to be dependable: a rating or a note that does not survive
+navigation, automatic advance, saving, or resuming is worse than no tool at all,
+because the reviewer cannot tell that anything was lost.
 
 My proposal set out three deliverables against that motivation:
 
@@ -83,11 +95,9 @@ My proposal set out three deliverables against that motivation:
   evaluation of their factual accuracy and effect on the review workflow.
 
 The aim behind all three was to reduce the burden of manual QC and to produce
-ratings that are reliable and documented. Which of them mattered most changed
-during the project, for reasons described in
-[How the Project Evolved](#how-the-project-evolved).
+ratings that are reliable and documented.
 
-## Summary
+## Summary of Contributions
 
 My work made QC-Studio's review workflow more informative and more
 dependable: I built the panel that puts quantitative quality metrics next to the
@@ -112,14 +122,9 @@ share of the code other contributors added.
   2026, successfully. Making the application dependable for sessions like that
   one, and reviewing the PRs that changed the paths they depended on, was the
   work the project most needed from me.
-- **Project direction:** two things reset the priorities mid-project. The PPMI
-  onboarding made the app's reliability for real review sessions and the review
-  of incoming PRs the urgent work; and the
-  infrastructure needed to experiment with open-weight models was not available,
-  so the AI panel could not progress past the sandbox. Full Nipoppy
-  `DatasetLayout` and manifest integration, production outlier detection, and the
-  AI-summary dashboard panel are left as future work, with the sandbox and IQM
-  infrastructure as the starting point.
+- **Not delivered as proposed:** full Nipoppy `DatasetLayout` and manifest
+  integration, production outlier detection, and the AI-summary dashboard panel.
+  The next section explains why the priorities changed.
 
 | Activity | Count (October 12, 2026) |
 | --- | --- |
@@ -220,7 +225,7 @@ one shared legend, and the current-subject marker is scoped to the active run �
 an unscoped distribution tells a reviewer nothing about which measurement is
 theirs.
 
-## 2. Rating Persistence, and What It Taught Me About the Codebase
+## 2. Rating Persistence and Test Coverage
 
 **Merged:** [PR #76](https://github.com/nipoppy/qc-studio/pull/76), September 2,
 2026, fixing [#73](https://github.com/nipoppy/qc-studio/issues/73).
@@ -283,7 +288,7 @@ also what made the later work possible: the review findings in #95, #83, and #74
 are about the same save, navigation, and session-state paths I had to understand
 in order to test them.
 
-## 3. Performance and the Project's First Automated Checks
+## 3. Caching and Continuous Integration
 
 **Montage caching** ([PR #62](https://github.com/nipoppy/qc-studio/pull/62),
 closes [#43](https://github.com/nipoppy/qc-studio/issues/43)). Montages were
@@ -365,7 +370,7 @@ of them the browser-level versions of #84 and #72. Next: tighten the rerun
 waits, track overwritten exports, and implement the save/resume specs.
 
 
-## 5. Evidence Bundles: An LLM Companion for QC
+## 5. Evidence Bundles for LLM-Assisted QC
 
 **Experimental:** [`evidence_bundle` branch](https://github.com/nipoppy/qc-studio/tree/evidence_bundle),
 issues [#24](https://github.com/nipoppy/qc-studio/issues/24),
@@ -421,7 +426,7 @@ the strongest argument for keeping this a companion that surfaces things to
 check rather than anything that produces a rating.
 
 
-## 6. Code Review and Workflow Testing
+## 6. Code Review
 
 I combined code reading with manual checks of real review sessions, focusing on
 whether ratings and notes survive navigation, filtering, saving, and resuming.
@@ -450,7 +455,7 @@ Reviewing #95 and #83 mattered on a schedule. Both changed the save, checkpoint,
 and resume paths the PPMI sessions depended on, and #95 merged on October 8,
 after I retested task switching and wrong-task checkpoint uploads on October 6.
 
-## 7. Upstream Niivue Issue
+## 7. Upstream Niivue Contribution
 
 **Reported and closed:** [niivue/niivue-vscode #314](https://github.com/niivue/niivue-vscode/issues/314).
 
@@ -466,29 +471,26 @@ step.
 
 ## What I Learned
 
-- **Streamlit's execution model is the source of most of these bugs.** Reruns,
-  widget keys and session state interact in ways that unit tests with mocks
-  cannot see, which is why #76 was a timing fix rather than a save fix and why I
-  argued for a browser-test layer.
-- **Where code lives changes whether it can be reused.** The IQM refactor from a
-  global MRIQC setting to a per-task `iqm_path`, and moving reference handling
-  out of the loader module, were both prompted by review and both made later
-  work (DWI support, the evidence-bundle percentiles) cheaper.
+- **Where code lives decides whether it can be reused.** Moving the IQM
+  configuration from a global MRIQC setting to a per-task `iqm_path`, and
+  lifting reference handling out of the loader module, were both prompted by
+  review, and both made later work cheaper — DWI support needed no new display
+  code.
 - **Deciding what not to ship is part of the work.** Hiding the reference
-  comparison pending #82, declining `st.fragment` in #62, and staging CI in two
-  PRs were all judgment calls I recorded with reasons so they could be argued
-  with.
+  comparison pending #82, declining `st.fragment` in #62, and staging CI across
+  two PRs were judgment calls, and I recorded the reasoning each time so it
+  could be argued with.
 - **Reproducibility is what makes a finding useful to someone else.** Turning
   intermittent reports into reproducible issues, regression tests that fail
   under the original conditions, and readable specifications is what let other
   contributors act on what I found.
 - **Review is a design conversation.** The strongest parts of #22 came out of
-  Nikhil's review comments, and my own reviews aimed to do the same thing: name
-  the concrete failure case, then retest it.
-- Open-source maintenance in practice: follow-up, verification, merging, and
-  closing superseded work. I also helped clarify expected save and navigation
-  behavior in [issue #89](https://github.com/nipoppy/qc-studio/issues/89#issuecomment-5674629745)
-  (automatic snapshots were a proposal, not a delivered feature).
+  review comments, and my own reviews aimed at the same thing: name the concrete
+  failure case, then retest it.
+- **Open-source maintenance is its own skill** — follow-up, verification,
+  merging, and closing superseded work. I also helped clarify expected save and
+  navigation behavior in
+  [issue #89](https://github.com/nipoppy/qc-studio/issues/89#issuecomment-5674629745).
 
 ## Next Steps
 
