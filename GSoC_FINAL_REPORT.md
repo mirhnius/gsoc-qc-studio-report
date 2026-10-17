@@ -41,20 +41,6 @@
 - [Next Steps](#next-steps) — open work, with entry points
 - [About This Report](#about-this-report) — how the records were checked
 
-**Companion documents.** Sections 1, 4, and 5 are summaries. The full technical
-account of each piece of work lives in its own document, and anyone picking up
-that work should start there rather than here:
-
-- **[IQM Viewer](IQM_VIEWER_BRANCH_EXPLANATION.md)** — how the design moved from
-  MRIQC-only to any pipeline, the reference-data investigation and why the
-  comparison is disabled, the implementation, and the tests.
-- **[Playwright E2E](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md)** — the suite's four
-  layers, rerun synchronization, the selector strategy and Streamlit's quirks,
-  the specification template, and the shared conventions for contributors.
-- **[Evidence Bundles](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md)** — the purpose,
-  how a package is built, the sandbox layout, the model experiments, and the
-  infrastructure limits that stopped the work.
-
 Full records of every PR, issue, review, merge, and closure are in the
 [appendices](GSoC_REPORT_APPENDIX.md).
 
@@ -229,7 +215,6 @@ upstream Niivue report.
 **Merged:** [PR #22](https://github.com/nipoppy/qc-studio/pull/22), September 10,
 2026. Closes [#12](https://github.com/nipoppy/qc-studio/issues/12) and
 [#23](https://github.com/nipoppy/qc-studio/issues/23).
-**Full detail:** [IQM Viewer Branch](IQM_VIEWER_BRANCH_EXPLANATION.md).
 
 Reviewers could see the images but not the numbers. Pipelines such as MRIQC
 already measure signal-to-noise, motion, and sharpness for every scan, but those
@@ -261,8 +246,12 @@ that data proved slow and incomplete, and the population distribution turned out
 markedly different from the dataset under review — a comparison that would
 mislead a reviewer more than inform them.
 [#82](https://github.com/nipoppy/qc-studio/issues/82) tracks the cleanup and the
-guard it needs before it returns. The branch document describes that
-investigation in full.
+guard it needs before it returns.
+
+This section is a summary. The design evolution, the reference-data
+investigation, the implementation, and the tests are written up in full in
+**[IQM Viewer Branch](IQM_VIEWER_BRANCH_EXPLANATION.md)**, which is where to
+start if you are picking this work up.
 
 ## 2. Rating Persistence and Test Coverage
 
@@ -359,7 +348,6 @@ documentation links.
 
 **Open draft:** [PR #88](https://github.com/nipoppy/qc-studio/pull/88), from
 [#75](https://github.com/nipoppy/qc-studio/issues/75).
-Full detail: [Playwright E2E Branch](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md).
 
 Three bugs I had worked on (#73, #81, #84) shared a shape: the logic was correct
 in isolation, and the failure lived in the wiring between real widgets, session
@@ -402,6 +390,12 @@ The 11 specifications cover the risky paths; six scenarios are implemented, two
 of them the browser-level versions of #84 and #72. Next: tighten the rerun
 waits, track overwritten exports, and implement the save/resume specs.
 
+This section is a summary. The four layers, the synchronization problem, the
+selector strategy and the Streamlit quirks it absorbs, the specification
+template, and the shared conventions are documented in full in
+**[Playwright E2E Branch](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md)**, which is
+where to start if you are picking this work up.
+
 
 ## 5. Evidence Bundles for LLM-Assisted QC
 
@@ -409,7 +403,6 @@ waits, track overwritten exports, and implement the save/resume specs.
 issues [#24](https://github.com/nipoppy/qc-studio/issues/24),
 [#33](https://github.com/nipoppy/qc-studio/issues/33),
 [#40](https://github.com/nipoppy/qc-studio/issues/40).
-Full detail: [Evidence Bundle Branch](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md).
 
 **The purpose was a companion, not an automated rater.** Deciding whether a scan
 passes is a hard problem, and the right tool would be a model trained for it — a
@@ -457,6 +450,12 @@ contradicting their own prose. Format validity and correct reasoning are
 separate problems, and only the first is cheap to check automatically — which is
 the strongest argument for keeping this a companion that surfaces things to
 check rather than anything that produces a rating.
+
+This section is a summary. The purpose, how a package is assembled, the sandbox
+layout, the cloud and local model experiments, and the infrastructure limits
+that stopped the work are written up in full in
+**[Evidence Bundle Branch](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md)**, which is
+where to start if you are picking this work up.
 
 
 ## 6. Code Review
