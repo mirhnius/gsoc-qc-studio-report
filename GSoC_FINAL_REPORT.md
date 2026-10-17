@@ -4,6 +4,19 @@
 **Project:** [QC-Studio](https://github.com/nipoppy/qc-studio)  
 **Status checked:** October 12, 2026
 
+---
+
+**How to read this.** [Background](#background) and
+[Project Goals](#project-goals) set out the problem and what I set out to build.
+[Summary](#summary) is the short version of what I delivered, and
+[How the Project Evolved](#how-the-project-evolved) explains why the priorities
+changed. Sections 1–7 cover each piece of work; each links to a longer technical
+document for its branch. [Next Steps](#next-steps) is the handoff. Full records
+of every PR, issue, review, merge, and closure are in the
+[appendices](GSoC_REPORT_APPENDIX.md).
+
+---
+
 ## Background
 
 Neuroimaging workflows produce a wide variety of artifacts — volumes, surfaces,
@@ -28,6 +41,22 @@ NODDIreg. A QC page can show up to three panels: a 3D MRI viewer built on
 NiiVue, a 2D image montage, and a QC metrics panel showing IQM distributions.
 The project's own framing is that neuroimagers should be able to *QC anything,
 anywhere, all at once*.
+
+A review session moves through the application like this, with the parts my
+work touched outlined:
+
+```mermaid
+flowchart LR
+  L["Landing page<br/>rater form · cohort · resume upload"] --> Q["QC page<br/>one participant and session"]
+  Q --> N["Niivue<br/>3D MRI"]
+  Q --> M["Montage<br/>2D images"]
+  Q --> I["QC metrics<br/>IQM distributions"]
+  Q --> D["Rating and notes<br/>per QC task"]
+  D --> X["Checkpoint · export TSV"]
+  D -. "autoplay advances" .-> Q
+  classDef mine stroke:#1f6feb,stroke-width:3px;
+  class I,M,D,X mine
+```
 
 The application's stated goals are to visualize both raw and processed
 neuroimaging data in an interactive web app, to support 3D MRI (NIfTI), 2D
@@ -208,6 +237,37 @@ longer belonged to the subject being rated, and the rating disappeared with no
 error. Nothing in the save path was broken, which is why ordinary testing missed
 it.
 
+```mermaid
+sequenceDiagram
+  autonumber
+  participant R as Reviewer
+  participant W as Rating widget
+  participant T as Autoplay timer
+  participant S as Saved record
+  Note over R,S: Before — only the timer wrote to the record
+  R->>W: clicks PASS
+  T->>T: interval elapses, advances the page
+  Note over W: widget key rotates to the next subject
+  T->>W: polls the previous key
+  W-->>T: empty
+  Note over T,S: rating lost, and nothing errors
+```
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant R as Reviewer
+  participant W as Rating widget
+  participant T as Autoplay timer
+  participant S as Saved record
+  Note over R,S: After — the click owns its own save
+  R->>W: clicks PASS
+  W->>S: on_change writes immediately
+  T->>T: interval plus 0.3s grace
+  T->>S: guard, an empty read cannot overwrite
+  Note over W,S: the rating was already safe
+```
+
 That made the fix structural. The rating now saves through the widget's
 `on_change` callback, so persistence no longer depends on the timer. Two
 safeguards back it up: a guard preventing an empty read from overwriting an
@@ -275,6 +335,14 @@ hiding its mechanics from the one above: a fixture that launches the real app, a
 fixture that hands over a loaded page, a shared layer owning every selector and
 every rerun wait, and the tests themselves, which know about none of it.
 
+```mermaid
+flowchart TD
+  T["tests/<br/>scenarios, which know about none of the below"] --> S
+  S["shared/<br/>every selector · every rerun wait"] --> A
+  A["app fixture<br/>a page already loaded and settled"] --> V
+  V["app_server fixture<br/>a real QC-Studio process on a free port"]
+```
+
 The hard part is synchronization, because Streamlit reruns the whole script on
 every interaction and a negative assertion can pass against the stale render —
 a green test over a shipped bug. The waits ask the app for its script state
@@ -319,6 +387,18 @@ model how to behave. The per-metric context comes from a dictionary I built by
 extracting the MRIQC documentation with Codex: what each metric means, which
 direction is concerning, when it is informative. A metric therefore reaches the
 model already interpreted rather than as a bare number.
+
+```mermaid
+flowchart LR
+  A["MRIQC IQMs"] --> B
+  C["BIDS and scanner metadata"] --> B
+  E["Reference statistics"] --> B
+  F["IQM context dictionary"] --> B
+  B["Builder"] --> G["PACKAGE.md"]
+  G --> H["Model"]
+  H --> J["Pydantic validation"]
+  J --> K["Issues and next steps<br/>for the reviewer"]
+```
 
 **The intended product.** On starting a session, a batch of subjects would be
 sent to the model, and each subject's summary of possible problems and suggested
