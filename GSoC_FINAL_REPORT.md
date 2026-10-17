@@ -4,11 +4,63 @@
 **Project:** [QC-Studio](https://github.com/nipoppy/qc-studio)  
 **Status checked:** October 12, 2026
 
+## Background
+
+Neuroimaging workflows produce a wide variety of artifacts — volumes, surfaces,
+networks, tables, figures, and summary metrics — and these often need to be
+reviewed for every participant and every visit. In current practice that means
+opening files by hand, in one tool per output type, inspecting them visually,
+and noting quality ratings in a spreadsheet. That process is slow, error-prone,
+and hard to scale to a modern dataset. It is also the step that stands between a
+processed dataset and an analysis-ready one, so when it becomes a bottleneck,
+the whole study waits.
+
+[QC-Studio](https://github.com/nipoppy/qc-studio) addresses this directly. It is
+a web-based quality control application, part of the
+[Nipoppy](https://github.com/nipoppy) ecosystem, that gives raters one portable
+interface — a browser, used locally or over SSH — for reviewing raw BIDS data,
+processed pipeline derivatives, and image quality metrics together, and for
+exporting their ratings as a tab-separated table. Because no single QC protocol
+fits every study, reviews are defined as configurable "QC tasks" in a `qc.json`
+file, which can be specific to a study, datatype, or pipeline; ready-made
+configurations ship for fMRIPrep, FreeSurfer, fsqc, QSIPrep, XCP-D, and
+NODDIreg. A QC page can show up to three panels: a 3D MRI viewer built on
+NiiVue, a 2D image montage, and a QC metrics panel showing IQM distributions.
+The project's own framing is that neuroimagers should be able to *QC anything,
+anywhere, all at once*.
+
+The application's stated goals are to visualize both raw and processed
+neuroimaging data in an interactive web app, to support 3D MRI (NIfTI), 2D
+image montages, and IQM metrics, and to make structured QC ratings possible
+through a clean, intuitive interface.
+
+## Project Goals
+
+Two things follow from that motivation and shaped this GSoC project. First, a
+reviewer needs quantitative evidence next to the images, because judging a scan
+by eye alone discards the measurements a pipeline such as MRIQC has already
+produced. Second, and less obvious until the application is used on a real
+dataset, the review session itself has to be dependable: a rating or a note that
+does not survive navigation, automatic advance, saving, or resuming is worse than
+no tool at all, because the reviewer cannot tell that anything was lost.
+
+My proposal set out three deliverables against that motivation:
+
+- A config-driven architecture using Nipoppy's `DatasetLayout` API, dynamic
+  subject loading, unified pagination, and `manifest.tsv` integration.
+- An IQM panel comparing subject metrics with local and MRIQC reference
+  distributions, including rule-based outlier detection.
+- An experimental AI panel displaying pre-generated summaries, with an
+  evaluation of their factual accuracy and effect on the review workflow.
+
+The aim behind all three was to reduce the burden of manual QC and to produce
+ratings that are reliable and documented. Which of them mattered most changed
+during the project, for reasons described in
+[How the Project Evolved](#how-the-project-evolved).
+
 ## Summary
 
-QC-Studio is a Streamlit application for reviewing neuroimaging data. It brings
-MRI images, 2D montages, image quality metrics (IQMs), and structured ratings
-into one review workflow. My work made that workflow more informative and more
+My work made QC-Studio's review workflow more informative and more
 dependable: I built the panel that puts quantitative quality metrics next to the
 images, fixed a bug that silently lost reviewers' ratings, set up the project's
 automated checks, started a browser-level test framework, and reviewed a large
@@ -55,16 +107,8 @@ records are in the [appendices](GSoC_REPORT_APPENDIX.md).
 
 ## How the Project Evolved
 
-My proposal had three deliverables:
-
-- A config-driven architecture using Nipoppy's `DatasetLayout` API, dynamic
-  subject loading, unified pagination, and `manifest.tsv` integration.
-- An IQM panel comparing subject metrics with local and MRIQC reference
-  distributions, including rule-based outlier detection.
-- An experimental AI panel displaying pre-generated summaries, with an
-  evaluation of their factual accuracy and effect on the review workflow.
-
-Two developments during the project changed which of these mattered most.
+Two developments during the project changed which of the three proposed
+deliverables mattered most.
 
 **Real users arrived.** New users were preparing to run QC on the PPMI dataset,
 which turned reliability from a quality concern into a blocking one. An AI
