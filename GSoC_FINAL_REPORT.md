@@ -31,14 +31,19 @@ Full records of every PR, issue, review, merge, and closure are in the
 
 ## Background and Goals
 
-Neuroimaging workflows produce a wide variety of artifacts — volumes, surfaces,
-networks, tables, figures, and summary metrics — and these often need to be
-reviewed for every participant and every visit. In current practice that means
-opening files by hand, in one tool per output type, inspecting them visually,
-and noting quality ratings in a spreadsheet. That process is slow, error-prone,
-and hard to scale to a modern dataset. It is also the step that stands between a
-processed dataset and an analysis-ready one, so when it becomes a bottleneck,
-the whole study waits.
+Quality control is one of the largest hidden manual efforts in neuroimaging, and
+it is usually not standardized. Workflows produce a wide variety of artifacts —
+volumes, surfaces, networks, tables, figures, and summary metrics — and these
+often need to be reviewed for every participant and every visit. In current
+practice that means opening files by hand, in one tool per output type,
+inspecting them visually, and noting quality ratings in a spreadsheet. The
+effort is invisible in the published record, slow, error-prone, and hard to
+scale. It is also the step standing between a processed dataset and an
+analysis-ready one, so when it becomes a bottleneck, the whole study waits.
+
+Because each lab improvises its own procedure, two reviewers on the same dataset
+can apply different criteria, and months later it can be difficult to reconstruct
+what was decided, on what basis, or by whom.
 
 [QC-Studio](https://github.com/nipoppy/qc-studio) addresses this directly. It is
 a web-based quality control application, part of the
@@ -47,12 +52,20 @@ interface — a browser, used locally or over SSH — for reviewing raw BIDS dat
 processed pipeline derivatives, and image quality metrics together, and for
 exporting their ratings as a tab-separated table. Because no single QC protocol
 fits every study, reviews are defined as configurable "QC tasks" in a `qc.json`
-file, which can be specific to a study, datatype, or pipeline; ready-made
-configurations ship for fMRIPrep, FreeSurfer, fsqc, QSIPrep, XCP-D, and
-NODDIreg. A QC page can show up to three panels: a 3D MRI viewer built on
-NiiVue, a 2D image montage, and a QC metrics panel showing IQM distributions.
-The project's own framing is that neuroimagers should be able to *QC anything,
-anywhere, all at once*.
+file that a lab adapts to its own criteria, rather than a fixed procedure
+imposed on it; ready-made configurations ship for fMRIPrep, FreeSurfer, fsqc,
+QSIPrep, XCP-D, and NODDIreg. A QC page can show up to three panels: a 3D MRI
+viewer built on NiiVue, a 2D image montage, and a QC metrics panel showing IQM
+distributions. Because it runs in a browser, the same review works against a
+local dataset or against data on a server over SSH, without moving the data or
+installing a viewer per output type.
+
+The result is meant to be structure without rigidity: a review that is
+consistent between reviewers because they see the same evidence in the same
+layout, and a record that can be read back afterwards — which participants were
+rated, against which task, by which rater, and with what notes. The project's
+own framing is that neuroimagers should be able to *QC anything, anywhere, all
+at once*.
 
 A review session moves through the application like this, with the parts my
 work touched outlined:
@@ -491,6 +504,32 @@ step.
   merging, and closing superseded work. I also helped clarify expected save and
   navigation behavior in
   [issue #89](https://github.com/nipoppy/qc-studio/issues/89#issuecomment-5674629745).
+
+## Where This Leaves QC-Studio
+
+The value of a tool like this rests on one thing: that the record it produces
+can be trusted and read back later. A QC decision is only useful if it is still
+there afterwards, attached to the right participant and task, attributable to
+the rater who made it. That is what makes QC auditable rather than folklore.
+
+Most of my work went into that property. The IQM viewer puts the measurements
+next to the images so a decision is made on the evidence rather than on
+impression alone. The autoplay fix means a rating a reviewer made is a rating
+that was saved. The review work on saving, checkpoints, filenames, and
+multifacet ratings was about records staying attached to the right subject,
+task, and rater through navigation, resuming, and export. The browser tests
+exist because that whole path crosses the seam a mocked test cannot see.
+
+Those are not separate strands. A tool that silently drops a rating does not
+have a reliability problem on top of its purpose — it has lost its purpose. The
+clearest evidence that this mattered is that new users ran QC on the PPMI
+dataset on October 7–9 and it held.
+
+What remains is also clear. The reference comparison needs data that can be
+trusted before it returns (#82). The browser suite needs its remaining
+high-value workflows (#88). The evidence-bundle work needs compute before it can
+be evaluated honestly. Each is written up with enough detail for someone else to
+pick up.
 
 ## Next Steps
 
