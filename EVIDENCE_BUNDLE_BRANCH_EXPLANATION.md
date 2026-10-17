@@ -3,18 +3,34 @@
 **Branch:** [`evidence_bundle`](https://github.com/nipoppy/qc-studio/tree/evidence_bundle)  
 **Branch snapshot:** October 5, 2026
 
-## Overview
+## Purpose
 
-The evidence-bundle branch is a sandbox for testing whether the evidence used in
-MRI quality control can be packaged for an LLM in a structured, inspectable way:
-scanner metadata, image quality metrics (IQMs), reference statistics, provenance
-warnings, and explanations of individual metrics. The model returns a constrained
-response that can be checked against the supplied evidence.
+The goal was a **companion for the reviewer, not an automated rater.** Deciding
+whether a scan passes is a hard problem, and the right tool for it would be a
+model trained for that task — a classifier or a deep-learning model — rather
+than a general language model. Even purpose-trained models are not reliably
+successful at it, so using an LLM to produce the final verdict is the wrong use
+of it.
 
-It is exploratory infrastructure, not a production feature. It does not
-establish clinical validity or replace human QC.
+What an LLM can usefully do is surface the possible issues in a scan and say
+what to follow up on: what to look at next, and what the reviewer should judge
+for themselves. The QC decision stays with the human. Everything here follows
+from that. The package is built so a reviewer can check the model's output
+against the evidence it was given, and the response schema asks for flagged
+metrics and recommended follow-up rather than a verdict to be trusted.
 
-## Motivation and Architecture
+## Intended Product
+
+On starting a session, a batch of subjects would be sent to the model. Each
+subject's summary — the possible problems and the suggested next steps — would
+be shown to the reviewer as a pop-up when they reach that subject.
+Summarization comes first; a chat interface for asking follow-up questions about
+a subject's data would be a later step.
+
+The branch itself is a sandbox: exploratory infrastructure, not a production
+feature, and not a claim of clinical validity.
+
+## Architecture
 
 A human reviewer weighs images, pipeline outputs, measurements, and acquisition
 context together. The question was whether a model could summarize such a
@@ -67,7 +83,11 @@ inputs, and outputs.
 The helper loads JSON and TSV/CSV inputs, selects BIDS and scanner metadata,
 loads the scan's MRIQC IQMs, and reads reference tables. It filters reference
 rows by scanner metadata and computes percentiles and z-scores, then attaches an
-interpretation and limitations to each metric.
+interpretation and its limitations to each metric. That per-metric context comes
+from a dictionary built by extracting the MRIQC documentation with Codex: what
+each metric means, which direction is concerning, and when it is informative. A
+metric therefore reaches the model already interpreted rather than as a bare
+number.
 
 Highlighted metrics are those marked important in the context, at or below the
 10th percentile, at or above the 90th, or with an absolute z-score of at least
@@ -124,19 +144,29 @@ content and not let ambiguous impressions override strong quantitative evidence.
   reasoning errors) and more conservative IQM-only responses from Claude. This
   is not a controlled ranking.
 
-Valid JSON is not the same as correct interpretation.
+Valid JSON is not the same as correct interpretation — which is the clearest
+argument for the companion framing. A model that can produce a well-formed
+response while misreading the metrics should be surfacing things for a reviewer
+to check, not issuing ratings.
 
 ## Infrastructure Limits
 
-The decisive constraint on this work was compute rather than design. The plan
-assumed local iteration on open-weight models, which was not possible on the
-hardware available to me: MPS failed on memory and allocation, the CPU fallback
-was too slow for repeated runs, and larger open-weight models could not be run
-at all. The models that did run were useful for validating the input pipeline
-but too small to reason about MRI quality, so the IQM-only text experiments with
-a cloud model carried most of the findings. Anyone continuing this work should
-secure GPU infrastructure first; without it, the open-weight side cannot produce
-a meaningful evaluation, whatever the prompt or package design.
+The text stage worked. The Claude API read the Markdown package and returned a
+structured response that Pydantic could validate, and the IQM-only findings rest
+on that.
+
+The next stage needed images, and that is where the work stopped. The vision
+model the project intended to use was a local one, and I could not run it on my
+own machine: MPS failed on memory and allocation, the CPU fallback was too slow
+to iterate on, and the larger open-weight models were out of reach entirely. The
+server intended for this was not yet available. The models that did run locally
+were useful for validating the input pipeline but too small to reason about MRI
+quality.
+
+So the stopping point was infrastructure, not a design dead end. Anyone
+continuing this should secure that compute first; without it the open-weight
+side cannot produce a meaningful evaluation, whatever the prompt or package
+design.
 
 ## Findings and Future Work
 
