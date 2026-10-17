@@ -48,7 +48,7 @@ recorded under review and maintenance below.
 | [#81](https://github.com/nipoppy/qc-studio/issues/81) | Reported loss of partial progress and reviewed the save/checkpoint response. | Closed |
 | [#82](https://github.com/nipoppy/qc-studio/issues/82) | Tracked reference-distribution filtering and display correctness. | Open |
 | [#84](https://github.com/nipoppy/qc-studio/issues/84) | Reported notes being discarded on forced navigation. | Closed |
-| [#101](https://github.com/nipoppy/qc-studio/issues/101) | Reported the minimum Streamlit version mismatch for the new `st.iframe` call; the maintainer marked it fixed by #95. | Closed |
+| [#101](https://github.com/nipoppy/qc-studio/issues/101) | Reported the minimum Streamlit version mismatch for the new `st.iframe` call. Fixed by #95. | Closed |
 | [#112](https://github.com/nipoppy/qc-studio/issues/112) | Reproduced export merge behavior retaining older rows despite an overwrite warning; requested consistent wording or behavior. | Open |
 
 The additional upstream issue is
@@ -61,8 +61,8 @@ described in [Section 7 of the main report](GSoC_FINAL_REPORT.md#7-upstream-niiv
 | --- | --- | --- |
 | [#10](https://github.com/nipoppy/qc-studio/pull/10), `nikhil153` | Viewer layout and overlay controls. | Asked about height/configuration behavior, reported colorbar stacking, checked the update, and approved. |
 | [#17](https://github.com/nipoppy/qc-studio/pull/17), `laurapiro17` | Documentation typo. | Explained that prior changes had addressed it and closed the superseded PR. |
-| [#20](https://github.com/nipoppy/qc-studio/pull/20), `nikhil153` | Initial pagination work: viewer, pagination, panel layout, and session-state managers. | My first review on the project. Seven inline comments across six files on duplicated functions and helpers, session state initialized twice, a missing `dataset_dir` argument, `panels_data` type handling, empty ratings and notes passed through pagination, and a proposed `normalize_selected_panels()` helper to unify panel keys. Written April 6–8, 2026 and [submitted](https://github.com/nipoppy/qc-studio/pull/20#pullrequestreview-4064027658) October 12, 2026. Nikhil [thanked me by name](https://github.com/nipoppy/qc-studio/pull/20#issuecomment-4413781991) for them with the other reviewers and said he had addressed them all. The implementation is credited to the author. |
-| [#25](https://github.com/nipoppy/qc-studio/pull/25), `GhazalehManj` | Session manager, cohort helpers, landing/completion pages, and sidebar navigation. | Six inline comments on duplicate handling, session assumptions, display constants, completed uploads, stale Continue QC widgets, and Start Over records. Follow-up changes explicitly acknowledged the review; I merged the PR. |
+| [#20](https://github.com/nipoppy/qc-studio/pull/20), `nikhil153` | Initial pagination work: viewer, pagination, panel layout, and session-state managers. | My first review on the project. Seven inline comments across six files on duplicated functions and helpers, session state initialized twice, a missing `dataset_dir` argument, `panels_data` type handling, empty ratings and notes passed through pagination, and a proposed `normalize_selected_panels()` helper to unify panel keys. Written April 6–8, 2026 and [submitted](https://github.com/nipoppy/qc-studio/pull/20#pullrequestreview-4064027658) October 12, 2026. |
+| [#25](https://github.com/nipoppy/qc-studio/pull/25), `GhazalehManj` | Session manager, cohort helpers, landing/completion pages, and sidebar navigation. | Six inline comments on duplicate handling, session assumptions, display constants, completed uploads, stale Continue QC widgets, and Start Over records. I merged the PR after the follow-up changes. |
 | [#38](https://github.com/nipoppy/qc-studio/pull/38), Copilot agent | Montage fixture/documentation terminology. | Approved cleanup and later closed the PR. |
 | [#53](https://github.com/nipoppy/qc-studio/pull/53), `SRSteinkamp` | Keyboard controls and narrow-screen layout. | Raised notes-field shortcut conflicts, Play/Pause coverage, and wrapped button labels. |
 | [#58](https://github.com/nipoppy/qc-studio/pull/58), `manonheff` | Review-duration statistics and plots. | Requested tests, questioned duration correctness, and suggested average-per-subject and grouped-histogram presentation. |
@@ -72,10 +72,10 @@ described in [Section 7 of the main report](GSoC_FINAL_REPORT.md#7-upstream-niiv
 | [#95](https://github.com/nipoppy/qc-studio/pull/95), `nikhil153` | Cohort helpers, session manager, rating widgets, checkpoint lookup, task navigation, filenames, and wildcard paths. | Identified persistence and identity problems; followed up on casing, identifier parsing, and checkpoint/path edge cases; retested task switching and wrong-task checkpoints, then approved. Merged October 8. |
 | [#96](https://github.com/nipoppy/qc-studio/pull/96), `nikhil153` | Citation metadata. | Reviewed and approved. Merged October 8. |
 | [#105](https://github.com/nipoppy/qc-studio/pull/105), `michellewang` | Sphinx docs, README/Quickstart, CLI and export conventions, CI, and pre-commit scope. | Verified a strict docs build and demo; reported startup failures and filename inconsistencies; suggested independent docs checks and limiting hooks on sample data. On October 11, asked for the PyBIDS mention to be removed from the session-list docs, since #111 removes PyBIDS session guessing. Open. |
-| [#111](https://github.com/nipoppy/qc-studio/pull/111), `nikhil153` | NIfTI and montage caching for memory use, and removal of PyBIDS-based session guessing. | Submitted a review on October 11 with three design points: two caching styles in two modules, different invalidation rules, and a shared cached dict that is read-only only by convention. The author's later commit, "added shared cache module and decoupled load_montage_data to address PR comments", responds to it. Open. |
+| [#111](https://github.com/nipoppy/qc-studio/pull/111), `nikhil153` | NIfTI and montage caching for memory use, and removal of PyBIDS-based session guessing. | Submitted a review on October 11 with three design points: two caching styles in two modules, different invalidation rules, and a shared cached dict that is read-only only by convention. Open. |
 
-These rows credit my review or maintenance role. The implementations in PRs by
-`GhazalehManj` and other contributors belong to their respective authors.
+These rows record my review and maintenance role. Implementations belong to the
+PRs' authors.
 
 For #25, my [submitted review](https://github.com/nipoppy/qc-studio/pull/25#pullrequestreview-4397400200)
 contained six inline comments. They covered
@@ -86,10 +86,7 @@ contained six inline comments. They covered
 [Continue QC widget reset](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3370631538),
 and [Start Over retaining records](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3370687500).
 
-Thomas [explicitly acknowledged my comments and described follow-up changes](https://github.com/nipoppy/qc-studio/pull/25#pullrequestreview-4460976114),
-and Ghazaleh [accepted the updates](https://github.com/nipoppy/qc-studio/pull/25#pullrequestreview-4461353279).
-I merged the PR under my account. These records support review and maintenance
-credit, not authorship of the pagination feature or every change in the PR.
+I merged the PR after the follow-up changes.
 My additional comments addressed
 [smaller, behavior-focused PRs](https://github.com/nipoppy/qc-studio/pull/25#issuecomment-4587917864)
 and [the dependency on this merge for planned CI/test work](https://github.com/nipoppy/qc-studio/pull/25#issuecomment-4587074842).
@@ -101,10 +98,7 @@ containing underscores, and absolute wildcard paths. On October 6, I tested
 finishing one task, switching tasks, and uploading a wrong-task checkpoint,
 then [approved the PR](https://github.com/nipoppy/qc-studio/pull/95#pullrequestreview-5436647028).
 Only the first task had image data in the samples, limiting image-level checks
-of the other tasks. I suggested a visible missing-image warning. Nikhil
-[reported fixing the remaining naming and globbing issues](https://github.com/nipoppy/qc-studio/pull/95#issuecomment-6066641684)
-before the October 8 merge. My approval does not mean every suggestion was
-implemented or every task's images were tested.
+of the other tasks. I suggested a visible missing-image warning. The PR merged on October 8.
 
 For #105, my October 10
 [submitted review](https://github.com/nipoppy/qc-studio/pull/105#pullrequestreview-5480252267)

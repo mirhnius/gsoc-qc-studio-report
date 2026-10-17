@@ -68,10 +68,7 @@ Seven inline comments across six files:
   and `niivue`/`svg`/`iqm`) into one, so `display_qc_rating_and_pagination()`
   and others would not each map keys themselves.
 
-[Nikhil thanked me by name](https://github.com/nipoppy/qc-studio/pull/20#issuecomment-4413781991),
-alongside `ThomasHMAC` and `GhazalehManj`, for the comments on this PR and said
-he had addressed them all before asking for approval to merge. The pagination
-implementation is credited to him.
+The pagination implementation is credited to the PR author.
 
 ### #25: Fix pagination compatibility and test alignment
 
@@ -97,11 +94,8 @@ Review contribution:
 - Explained how merging this PR would unblock planned CI/test workflow work,
   including a proposed split between lightweight and slower/data-dependent
   checks. That proposal is not credited as implemented in #25.
-- Thomas explicitly acknowledged my review and reported corresponding changes
-  to completion/resume, Continue QC resets, clearing records on Start Over,
-  session handling, and duplicate-export reporting. Ghazaleh accepted the
-  updates. Their implementation work is credited to them.
-- Merged the PR.
+- Merged the PR after the follow-up changes. The implementation work is
+  credited to its authors.
 
 Evidence:
 
@@ -109,8 +103,6 @@ Evidence:
 - [Completed-upload finding](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3370573536).
 - [Continue QC state-reset finding](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3370631538).
 - [Start Over record-retention finding](https://github.com/nipoppy/qc-studio/pull/25#discussion_r3370687500).
-- [Follow-up implementation acknowledgement](https://github.com/nipoppy/qc-studio/pull/25#pullrequestreview-4460976114).
-- [Author acceptance](https://github.com/nipoppy/qc-studio/pull/25#pullrequestreview-4461353279).
 - [PR-scope feedback](https://github.com/nipoppy/qc-studio/pull/25#issuecomment-4587917864).
 - [CI/test coordination](https://github.com/nipoppy/qc-studio/pull/25#issuecomment-4587074842).
 
@@ -262,10 +254,8 @@ Review contribution:
 - Recorded the test limitation: sample data only provided images for the first
   task, so image-level checks of other tasks were not possible. Suggested a
   visible missing-image warning rather than silently hiding the viewer.
-- Nikhil reported fixing the remaining sanitized-naming and globbing issues
-  before merging. Fix implementation belongs to him; my contribution was
-  review and verification. The earlier Edit Notes behavior was not reproduced
-  by the maintainer, and this report does not claim every suggestion was fixed.
+- The remaining naming and globbing issues were fixed before the October 8
+  merge. My contribution was the review and verification.
 
 Evidence:
 
@@ -335,9 +325,6 @@ Review contribution, submitted October 11:
 - Noted that `cache_resource` returns the same dict to every session and that
   read-only use was enforced only by a docstring; suggested an immutable return
   type or a test that fails on mutation.
-- The author's later commit, "added shared cache module and decoupled
-  load_montage_data to address PR comments", responds to this review. The
-  implementation is credited to the author.
 - [Submitted review](https://github.com/nipoppy/qc-studio/pull/111#pullrequestreview-5481379082).
 
 ## Issue Triage / Issue Discussion Contributions
@@ -419,4 +406,4 @@ Contribution:
   export to disk.
 - Suggested simplifying Next / Confirm and Next and avoiding a preselected
   rating.
-- Automatic snapshots were a proposal; the maintainer left them for future work.
+- Automatic snapshots were a proposal, left for future work.

@@ -146,145 +146,105 @@ Work added beyond the original proposal: the autoplay persistence fix, CI and lo
 checks, SVG caching, the draft Playwright framework, workflow reviews, and the
 upstream Niivue report.
 
-## 1. IQM Viewer: From a Metric Dropdown to a Per-Task Panel
+## 1. IQM Viewer
 
-**Delivered:** [PR #22](https://github.com/nipoppy/qc-studio/pull/22), merged
-September 10, 2026, after 45 commits across 112 files. Related:
-[#12](https://github.com/nipoppy/qc-studio/issues/12),
+**Merged:** [PR #22](https://github.com/nipoppy/qc-studio/pull/22), September 10,
+2026. Closes [#12](https://github.com/nipoppy/qc-studio/issues/12) and
 [#23](https://github.com/nipoppy/qc-studio/issues/23).
-Details: [IQM Viewer Branch](IQM_VIEWER_BRANCH_EXPLANATION.md).
+Detail: [IQM Viewer Branch](IQM_VIEWER_BRANCH_EXPLANATION.md).
 
-Reviewers could see images but not the numbers MRIQC produces for them. Issue
-#12 asked for IQM distributions with MRIQC reference comparison, and my first
-implementation did exactly that: a metric dropdown, a dataset distribution, and
-a reference population fetched from the MRIQC Web API. Getting that working was
-the easy part. Nearly all of the design work came from three problems it
-exposed.
+Reviewers could see images but not the numbers MRIQC produces for them. My first
+version did what #12 asked for: a metric dropdown, a dataset distribution, and a
+reference population from the MRIQC Web API. Three problems it exposed drove the
+rest of the design.
 
-**Problem 1: the reference data could not be trusted or even downloaded.**
-Fetching from the MRIQC Web API ran for two full days without completing, and
-the partial result was too large to commit. I rewrote the lookup to read
-cached, filtered Parquet instead of querying the API per view, which made the
-panel usable. But extreme values in the population stretched the plot axes
-enough to make the dataset distribution unreadable, so clipping became
-necessary. At that point I concluded that loading the data successfully was not
-the same as displaying it honestly. Rather than ship a comparison I could not
-vouch for, I filed [#82](https://github.com/nipoppy/qc-studio/issues/82),
-hid the "Dataset + reference" mode, and kept the infrastructure in place behind
-it. Hiding a feature I had already built was the right call: a plausible-looking
-but wrong reference curve is worse for a reviewer than no curve at all.
+**The reference data was not usable.** Fetching from the API ran for two days
+without completing, and the partial result was too large to commit. I replaced
+the per-view queries with cached, filtered Parquet, then had to clip extreme
+population values that were stretching the axes. At that point I concluded that
+loading the data was not the same as displaying it honestly, so I filed
+[#82](https://github.com/nipoppy/qc-studio/issues/82) and hid the comparison
+mode, keeping the infrastructure behind it. A plausible but wrong reference curve
+is worse for a reviewer than none.
 
-**Problem 2: one dropdown per metric did not match how reviewers work.** In
-review, Nikhil pointed out that selecting metrics one at a time was cumbersome.
-I tried an overview/detail layout with a scrollable overview, then simplified to
-a metric grid inside each source tab, so a reviewer sees the whole picture
-first. I also replaced box plots with violins (which show the shape of a
-distribution, not just its quartiles), gave each tab one shared legend with
-consistent shapes and colors, and scoped the current-subject marker to the
-active run with hover text naming it. That last detail mattered more than it
-sounds: a distribution with an unscoped marker tells a reviewer nothing about
-which measurement belongs to the scan in front of them, and an early review
-comment caught exactly that case, where the highlighted subject was not visible
-at all.
+**One dropdown per metric did not match how reviewers work.** I moved to a metric
+grid per source tab, replaced box plots with violins to show distribution shape,
+gave each tab one shared legend, and scoped the current-subject marker to the
+active run. The marker mattered most: an unscoped distribution tells a reviewer
+nothing about which measurement is theirs.
 
-**Problem 3: the configuration encoded MRIQC assumptions.** The original design
-had a top-level `iqm_distributions` setting with hardcoded `t1w` and `bold`
-groupings. Nikhil observed that the modality should follow from the QC task
-rather than being picked in the UI, and that pointed at the deeper issue: the
-feature was structured as an MRIQC add-on instead of a property of a QC task. I
-replaced it with a per-task `iqm_path` list, deliberately mirroring the existing
-`svg_montage_path` pattern so the configuration would be predictable to anyone
-who already knew the project. Each source became its own tab; MRIQC-like
-sources use curated metric groups, while others fall back to generic per-column
-display, so a non-MRIQC pipeline is degraded rather than unsupported. DWI
-support then followed from extending the group registry and inferring the
-modality, not from new display code, which is the practical test of whether that
-refactor was worth doing.
+**The configuration encoded MRIQC assumptions.** A top-level `iqm_distributions`
+setting hardcoded `t1w` and `bold` groupings, which made the feature an MRIQC
+add-on rather than a property of a QC task. I replaced it with a per-task
+`iqm_path` list, mirroring the existing `svg_montage_path` pattern so it would be
+predictable to anyone who knew the project. Each source became a tab; non-MRIQC
+sources fall back to generic per-column display instead of being unsupported.
+DWI support then followed from extending the group registry, with no new display
+code — the practical test of whether the refactor paid off.
 
-The review also pushed the module boundaries. I had put the reference maps and
-download helpers in `ui/utils/data_loaders.py`; Nikhil argued that a loader
-module should not import `streamlit` and `requests` or hold configuration maps.
-I agreed and moved both into a dedicated `ui/utils/reference_data.py`. A final
-review round caught that `URL_PARENT` was resolved at import time, before the
-app's environment was in place, so I moved the resolution to call time.
+Review also moved the module boundaries: reference maps and download helpers
+went from `ui/utils/data_loaders.py` into a dedicated `ui/utils/reference_data.py`,
+and the reference URL moved from import-time to call-time resolution. I added
+tests for metric grouping, source loading, widget state, and plot rendering, plus
+sample MRIQC inputs and a DWI test configuration.
 
-Alongside the feature I added tests for metric grouping, source loading, widget
-state, plot rendering paths, and DWI groups, plus sample MRIQC inputs and a DWI
-test configuration, since a viewer with no fixtures cannot be checked by anyone
-else.
+## 2. Rating Persistence
 
-## 2. Rating Persistence: Reading the Widget Too Late
+**Merged:** [PR #76](https://github.com/nipoppy/qc-studio/pull/76), September 2,
+2026, fixing [#73](https://github.com/nipoppy/qc-studio/issues/73).
 
-**Delivered:** [PR #76](https://github.com/nipoppy/qc-studio/pull/76), merged
-September 2, 2026, fixing [#73](https://github.com/nipoppy/qc-studio/issues/73).
+A reviewer reported that ratings chosen during autoplay sometimes went missing.
+The report was intermittent, so the first useful step was framing it as a timing
+problem: I wrote #73 around the hypothesis that clicks near the automatic-advance
+boundary were the ones being lost.
 
-A reviewer reported that some ratings chosen during autoplay were missing from
-the saved output. The report was intermittent, which is the hardest kind of bug
-to act on, and the first useful step was framing it as a timing problem rather
-than a save problem: I wrote #73 around the hypothesis that clicks near the
-automatic-advance boundary were the ones being lost.
+The code confirmed it. A rating click never saved itself; it only reached the
+record when the autoplay timer next polled `session_state`. Each advance rotated
+the widget key, so a click landing after an advance was read from a key that no
+longer belonged to the subject being rated, and the rating disappeared with no
+error. Nothing in the save path was broken, which is why ordinary testing missed
+it.
 
-Reading the code confirmed it and explained why it was intermittent. A rating
-click never saved itself. It only reached the saved record when the autoplay
-timer next polled `session_state`. Each page advance rotated the widget key, so
-a click that landed after the timer had already advanced was read from a key
-that no longer belonged to the subject being rated, and the rating vanished with
-no error. Nothing was broken in the save path, which is why the bug survived
-ordinary testing: it depended entirely on when the click happened.
-
-That diagnosis made the fix structural rather than defensive. The rating now
-saves itself through the widget's `on_change` callback, so persistence no longer
-depends on the timer at all. Two safeguards back it up: a guard so an empty
-widget read cannot overwrite an existing rating, and a 0.3-second grace period
-(`AUTOPLAY_ADVANCE_GRACE_SECONDS`) before the poll treats the interval as
-elapsed, giving a click made right at the boundary time to reach the server and
-save itself. The PR is roughly 870 added lines against 15 removed, because most
-of it is regression tests: a test that fails under the original conditions is
-the only way to show a timing bug is actually gone.
+That made the fix structural. The rating now saves through the widget's
+`on_change` callback, so persistence no longer depends on the timer. Two
+safeguards back it up: a guard preventing an empty read from overwriting an
+existing rating, and a 0.3-second grace period before the poll treats the
+interval as elapsed. Most of the PR is regression tests, since a test that fails
+under the original conditions is the only way to show a timing bug is gone.
 
 The same investigation surfaced related gaps in notes and partial progress,
-which I reported as [#11](https://github.com/nipoppy/qc-studio/issues/11),
+reported as [#11](https://github.com/nipoppy/qc-studio/issues/11),
 [#81](https://github.com/nipoppy/qc-studio/issues/81), and
-[#84](https://github.com/nipoppy/qc-studio/issues/84). All three are now closed;
+[#84](https://github.com/nipoppy/qc-studio/issues/84). All three are closed;
 other contributors implemented those fixes.
 
 ## 3. Performance and the Project's First Automated Checks
 
-**SVG caching** ([PR #62](https://github.com/nipoppy/qc-studio/pull/62), closed
-[#43](https://github.com/nipoppy/qc-studio/issues/43)). Montages were being
-re-read and re-rendered on every widget interaction. Caching with
-`@st.cache_data` is the obvious move; making the cache key correct is the real
-work. The path list had to be normalized to a tuple before Streamlit could use
-it as a stable key, and I kept `load_svg_data()` as the public entry point while
-moving the expensive file loading, image conversion, and montage assembly into a
-cached helper, so callers did not change. I also decided *against* adding
-`st.fragment` in the same pass, and said so in the PR: fragmenting the
-rating/notes panel risked widget state going stale when the participant or
-session changed, which is precisely the class of bug I had just fixed in #76. I
-recorded my uncertainty rather than hiding it, and noted that `load_svg_data()`
-was doing too much and deserved a follow-up refactor separating path
-normalization, loading, conversion, and montage creation.
+**Montage caching** ([PR #62](https://github.com/nipoppy/qc-studio/pull/62),
+closes [#43](https://github.com/nipoppy/qc-studio/issues/43)). Montages were
+re-read and re-rendered on every widget interaction. Caching is the obvious move;
+the real work is the cache key, which required normalizing the path list to a
+tuple so Streamlit could use it. I kept `load_svg_data()` as the public entry
+point and moved the expensive loading, conversion, and assembly into a cached
+helper, so callers did not change. I deliberately left `st.fragment` out of the
+same pass and said why in the PR: fragmenting the rating and notes panel risked
+widget state going stale when the participant changed, which is the bug class I
+had just fixed in #76.
 
 **CI and local checks** ([PR #39](https://github.com/nipoppy/qc-studio/pull/39),
-from my own proposal in [#35](https://github.com/nipoppy/qc-studio/issues/35)).
-The project had no automated checks, so the first decision was how much to
-introduce at once. I deliberately staged it: formatting, linting, and spelling
-(Black, Flake8, codespell) in the first PR, with the test workflow left as an
-explicit follow-up in the checklist, because which tests belong on every PR is a
-question for the maintainers, not a thing to decide unilaterally in a
-configuration PR. Introducing a formatter to an existing codebase also means a
-large diff, which is a bad thing to bundle with a behavioral change.
+from my proposal in [#35](https://github.com/nipoppy/qc-studio/issues/35)). The
+project had no automated checks, so the question was how much to introduce at
+once. I staged it: Black, Flake8, and codespell first, with the test workflow
+left as an explicit follow-up, because which tests gate every PR is a maintainer
+decision rather than something to settle inside a configuration PR. Adding a
+formatter to an existing codebase also produces a large diff, which should not
+ride along with a behavioral change.
 
-The local setup matters as much as the CI side. Pre-commit runs the same tools
-with the same configuration files, so the hooks and the CI job cannot disagree,
-and the file filters are scoped to `ui/` and `pipelines/` Python plus specific
-config files, so whitespace hooks do not start rewriting sample data. I added a
-local pytest hook so UI tests run before a commit rather than after a push. The
-staged plan also recorded what I was choosing not to do yet: separating
-lightweight from slow or data-dependent tests, and coverage reporting. Later,
-reviewing [#105](https://github.com/nipoppy/qc-studio/pull/105), I argued for
-keeping a documentation build in its own workflow for the same reason, so a docs
-failure cannot block code tests.
+Pre-commit runs the same tools against the same configuration files as CI, so
+hooks and CI cannot disagree, and the file filters are scoped to `ui/` and
+`pipelines/` Python plus named config files so whitespace hooks do not rewrite
+sample data. A local pytest hook runs the UI tests before a commit instead of
+after a push.
 
 Two smaller maintenance PRs came out of working in the code:
 [#34](https://github.com/nipoppy/qc-studio/pull/34) replaced SVG-specific
@@ -292,205 +252,120 @@ wording with montage terminology once the panel handled 2D images generally, and
 [#66](https://github.com/nipoppy/qc-studio/pull/66) repaired broken
 documentation links.
 
-## 4. Playwright Testing: Writing the Specification First
+## 4. Playwright Browser Testing
 
-**In progress:** [PR #88](https://github.com/nipoppy/qc-studio/pull/88), open
-draft, 13 commits across 38 files. Related:
+**Open draft:** [PR #88](https://github.com/nipoppy/qc-studio/pull/88), from
 [#75](https://github.com/nipoppy/qc-studio/issues/75).
-Details: [Playwright E2E Branch](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md).
+Detail: [Playwright E2E Branch](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md).
 
-Three of the bugs I had worked on (#73, #81, #84) shared a shape: the logic was
-correct in isolation, and the failure lived in the interaction between real
-widgets, session state, and Streamlit's rerun cycle. The existing `ui/tests/`
-suite mocks Streamlit, so by construction it cannot see that class of bug. That
-is the argument for browser tests, and I made it in #75 rather than starting to
-write tests and justifying them afterwards.
+Three bugs I had worked on (#73, #81, #84) shared a shape: the logic was correct
+in isolation, and the failure lived in the interaction between real widgets,
+session state, and Streamlit's rerun cycle. The existing `ui/tests/` suite mocks
+Streamlit, so by construction it cannot see that class of bug. I made that
+argument in #75 before writing any tests.
 
-The first design decision was scope: these tests are marked and run separately
-from the fast suite, because they need browser binaries and a real server, and a
-test layer that makes the quick feedback loop slow gets abandoned.
+The suite is marked and run separately from the fast tests, because it needs
+browser binaries and a real server, and a test layer that slows the quick
+feedback loop gets abandoned.
 
-The harness is built so a test does not have to know how the app starts. Pytest
-fixtures allocate a free port, launch the app with `streamlit run`, wait on its
-health endpoint, point output at a temporary directory so a test run cannot touch
-the repository's `output/`, and tear the server down afterwards. Widget
-selectors and interactions live in one shared module, with the awkward details
-handled once: ordinary buttons behave differently from form-submit buttons, and
-alert text may arrive with the leading emoji stripped. Tests reference
-user-facing strings through `ui/constants.py` instead of copying them, so a
-label change does not quietly break the suite.
+Tests do not need to know how the app starts: fixtures allocate a free port,
+launch it with `streamlit run`, wait on the health endpoint, redirect output to a
+temporary directory so a run cannot touch the repository's `output/`, and tear
+the server down. Selectors and interactions live in one shared module, which
+handles the awkward details once — form-submit buttons behave differently from
+ordinary ones, and alert text can arrive with the leading emoji stripped. Tests
+reference user-facing strings through `ui/constants.py` rather than copying them.
 
-The hardest part is synchronization. Streamlit reruns the script after an
+Synchronization is the hard part. Streamlit reruns the script after an
 interaction, so an assertion made immediately after a click can inspect the
-previous render. Negative assertions are the dangerous case, because "the
-element is gone" and "the new render has not arrived" look identical and the
-test passes for the wrong reason. The waits module centralizes this, waiting for
-the script state to reach `notRunning`, which is also the one part reviewers
-have pushed back on and where I expect to keep iterating.
+previous render. Negative assertions are the dangerous case: "the element is
+gone" and "the new render has not arrived" look identical, and the test passes
+for the wrong reason. The waits module centralizes this by waiting for the script
+state to reach `notRunning`.
 
-I also chose to write a specification before each test. Each one records the
-screen, category, priority, why the behavior needs a browser, Given/When/Then
-steps, and the relevant copy and constants. The point is that expected behavior
-becomes reviewable before any Playwright code exists, which is where
-disagreements are cheap to settle, and the 11 specifications now describe the
-risky paths (validation, ratings surviving navigation, upload and resume,
-overwrite protection, checkpoints, notes, autoplay) whether or not each has an
-implemented test yet. Six scenarios are implemented in four files, and they were
-not chosen at random: alongside two smoke checks and two rater-form validation
-checks, notes persistence across navigation and notes pausing autoplay are the
-browser-level versions of bugs #84 and #72. Some tests disable Niivue so they
-test the workflow rather than waiting on volume rendering.
+I write a specification before each test, recording the screen, why the behavior
+needs a browser, Given/When/Then steps, and the relevant constants. Expected
+behavior then becomes reviewable before any Playwright code exists, which is
+where disagreements are cheap to settle. The 11 specifications cover the risky
+paths — validation, ratings surviving navigation, upload and resume, overwrite
+protection, checkpoints, notes, autoplay. Six scenarios are implemented, and the
+two workflow tests are the browser-level versions of #84 and #72.
 
-Because the specification-first workflow only helps if others follow it, the PR
-also includes the Claude Code skills and agents that encode those conventions
-for future contributors. Their scope is still open for discussion with the
-maintainer and could reasonably be split into a separate PR.
-
-Status: the PR description records passing Chromium smoke tests against a real
-browser. Next steps are tightening the rerun waits, tracking overwritten
-exports, and implementing the save/resume scenarios the specifications already
-describe.
+Next: tighten the rerun waits, track overwritten exports, and implement the
+save/resume scenarios the specifications already describe.
 
 ## 5. Evidence Bundles for LLM-Assisted QC
 
-**Experimental:** [`evidence_bundle` branch](https://github.com/nipoppy/qc-studio/tree/evidence_bundle).
-Related: [#24](https://github.com/nipoppy/qc-studio/issues/24),
+**Experimental:** [`evidence_bundle` branch](https://github.com/nipoppy/qc-studio/tree/evidence_bundle),
+issues [#24](https://github.com/nipoppy/qc-studio/issues/24),
 [#33](https://github.com/nipoppy/qc-studio/issues/33),
 [#40](https://github.com/nipoppy/qc-studio/issues/40).
-Details: [Evidence Bundle Branch](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md).
+Detail: [Evidence Bundle Branch](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md).
 
-The proposal's AI panel assumed pre-generated summaries, but it left the harder
-question open: what does a model actually need to see in order to say anything
-defensible about a scan? I treated that as the research question and worked
-backwards from how a human reviews, which is never from a bare list of numbers.
-A reviewer reads a metric against context: what the metric means, how this scan
-compares with a population, and how much weight the measurement deserves.
+The proposal's AI panel assumed pre-generated summaries but left the harder
+question open: what does a model need to see to say anything defensible about a
+scan? I worked backwards from how a human reviews, which is never from a bare
+list of numbers. A reviewer reads a metric against context — what it means, how
+the scan compares with a population, how much weight the measurement deserves.
 
-So the evidence package carries that context explicitly. Shared helpers load
-BIDS and scanner metadata, the scan's MRIQC metrics, and reference tables, filter
-the reference rows by scanner metadata, and compute percentiles and z-scores.
-Each metric is then paired with an interpretation and its caveats, and the
-package records direction of concern and evidence strength per metric. Rather
-than ask the model to decide what to look at, the builder highlights metrics
-flagged as important or sitting beyond the 10th or 90th percentile or an absolute
-z-score of 1.5. Those are deliberately simple experimental rules, chosen so that
-what the model was shown is reconstructable afterwards instead of hidden in a
-prompt.
+So the package carries that context explicitly. Helpers load BIDS and scanner
+metadata, the scan's MRIQC metrics, and reference tables, filter reference rows
+by scanner metadata, and compute percentiles and z-scores. Each metric is paired
+with an interpretation, its caveats, a direction of concern, and an evidence
+strength. Rather than let the model choose what to look at, the builder
+highlights metrics flagged as important or beyond the 10th or 90th percentile or
+an absolute z-score of 1.5 — deliberately simple rules, so what the model was
+shown can be reconstructed afterwards.
 
-The second decision was to constrain the output and validate it. The response
-schema requires a decision, confidence, summary, flagged metrics, reasons, and
-recommended follow-up, checked with Pydantic, and every run keeps both the
-package and the response (`PACKAGE.md`, `result.json`, `result_error.json`) so a
-failure can be traced to the evidence that produced it. I chose Markdown for the
-packages because being able to read what the model read mattered more during
-development than compactness, while noting JSON as the likely production format.
+The output is constrained and validated: a schema requiring decision,
+confidence, summary, flagged metrics, reasons, and recommended follow-up, checked
+with Pydantic, with both the package and the response kept so a failure can be
+traced to the evidence that produced it.
 
-The limiting factor turned out to be infrastructure rather than design. The
-proposal assumed I could iterate on open-weight models locally, and that was not
-possible on the hardware available to me. Apple MPS hit memory and allocation
-failures, so the 4B model had to run on CPU, which made each iteration slow
-enough to discourage the repeated runs an evaluation needs; larger open-weight
-models were out of reach entirely. What remained in range were models small
-enough to test the pipeline but too small to do the task, plus cloud models for
-the IQM-only text experiments. Setting up or obtaining GPU infrastructure was
-outside what I could do within the project, so I treated the limit as a result
-to record: this line of work needs that infrastructure in place before an
-evaluation is meaningful.
+The limiting factor was infrastructure, not design. Iterating on open-weight
+models locally was not possible on my hardware: MPS failed on memory and
+allocation, the 4B model had to run on CPU slowly enough to discourage repeated
+runs, and larger models were out of reach. What remained were models small enough
+to test the pipeline but too small for the task, plus cloud models for the
+IQM-only text experiments. I treated that as a result worth recording: this line
+of work needs GPU infrastructure before an evaluation is meaningful.
 
-That setup is what made the findings interpretable. Across three MR-ART
-acquisitions of one subject, the responses were `uncertain`, `uncertain`, and
-`fail`, with the clearly degraded scan the easiest to call. The more useful
-result came from the local LLaVA-OneVision runs: schema-valid JSON that still
-confused metric values with percentiles, flagged metrics that did not match its
-own prose, and used `direction_of_concern` inconsistently. Format validity and
-correct reasoning are separate problems, and only the first is cheap to check
-automatically. That is the main thing this sandbox establishes, along with a
-reusable structure for the larger labeled evaluation it would take to say
-anything about accuracy. The dataset is public, so training overlap is possible,
-and the generated metric explanations still need expert review.
+The findings themselves: across three MR-ART acquisitions of one subject the
+responses were `uncertain`, `uncertain`, and `fail`, with the clearly degraded
+scan easiest to call. More usefully, the local runs produced schema-valid JSON
+that still confused metric values with percentiles and flagged metrics
+contradicting its own prose. Format validity and correct reasoning are separate
+problems, and only the first is cheap to check automatically.
 
-## 6. Code Review and User-Workflow Testing
+## 6. Code Review and Workflow Testing
 
 I combined code reading with manual checks of real review sessions, focusing on
-whether ratings and notes survive navigation, filtering, saving, and resuming. I
-gave concrete failure cases and suggestions and, where possible, retested fixes
-before approving. Fixes in others' PRs are credited to their authors. The
-[review appendix](GSoC_REPORT_APPENDIX.md#appendix-c-review-and-comment-activity-on-others-prs)
-and [review detail](GSoC_CONTRIBUTION_DOSSIER.md) list every comment.
+whether ratings and notes survive navigation, filtering, saving, and resuming.
+Where possible I retested fixes before approving. Implementations in other
+contributors' PRs are theirs; these are my review findings. Comment-level records
+are in the [review detail](GSoC_CONTRIBUTION_DOSSIER.md) and
+[appendix](GSoC_REPORT_APPENDIX.md#appendix-c-review-and-comment-activity-on-others-prs).
 
-**Larger reviews**
-
-- [#20](https://github.com/nipoppy/qc-studio/pull/20) (initial pagination): my
-  first review on the project, written in April 2026 before I had authored any
-  code here, and
-  [now submitted](https://github.com/nipoppy/qc-studio/pull/20#pullrequestreview-4064027658)
-  as seven inline comments across six files. They covered a duplicated function
-  shared with `pagination.py`, session state initialized in two places, a
-  `dataset_dir` argument that was never passed, a panel-count helper duplicating
-  `SessionManager.get_panel_count()`, type handling for `panels_data` in session
-  state, and empty ratings and notes being passed through pagination. The last
-  one proposed a `normalize_selected_panels()` method on `PanelLayoutManager` so
-  the two sets of panel keys were unified in one place instead of each function
-  doing its own mapping. Nikhil
-  [thanked me by name for these comments](https://github.com/nipoppy/qc-studio/pull/20#issuecomment-4413781991)
-  with the other reviewers and said he had addressed them all before the PR was
-  approved. The pagination implementation is his.
-- [#95](https://github.com/nipoppy/qc-studio/pull/95) (multifacet ratings):
-  found saved ratings being masked by all-`None` widgets, facet-name changes
-  that broke saved matching, checkpoint lookup across the wrong rater or task,
-  stale task navigation, and filename and wildcard-path edge cases. Retested
-  task switching and wrong-task checkpoints, then approved; merged October 8.
-- [#83](https://github.com/nipoppy/qc-studio/pull/83) (saving and checkpoints):
-  reported filename and path inconsistencies, checkpoint confusion, altered
-  leading-zero subject IDs, lost autoplay notes, and mislabeled counts; merged.
-- [#74](https://github.com/nipoppy/qc-studio/pull/74) (filtering and
-  navigation): found autoplay leaving the active filter and a fully reviewed
-  cohort skipping the congratulations page; approved; merged.
-- [#25](https://github.com/nipoppy/qc-studio/pull/25) (pagination
-  compatibility): six inline comments on completed uploads, stale Continue QC
-  widgets, Start Over records, duplicate handling, session assumptions, and
-  display constants. The follow-up changes acknowledged the review; I merged it.
-- [#105](https://github.com/nipoppy/qc-studio/pull/105) (documentation site):
-  verified a strict Sphinx build, demo startup, CLI flags, and export columns;
-  flagged README startup failures, CI coupling, pre-commit scope, and filename
-  inconsistencies; on October 11 asked to remove the PyBIDS mention from the
-  session docs. Open.
-- [#111](https://github.com/nipoppy/qc-studio/pull/111) (memory optimization):
-  noted two caching styles in two modules, different invalidation rules (the
-  NIfTI key includes file mtime and size, the montage key does not), and a
-  shared cached dict that is read-only only by docstring. The author's later
-  commit "added shared cache module and decoupled load_montage_data to address
-  PR comments" responds to the review. Open.
-
-**Smaller reviews**
-
-- [#10](https://github.com/nipoppy/qc-studio/pull/10): viewer layout; reported
-  overlay colorbar stacking, checked the update, approved; merged.
-- [#53](https://github.com/nipoppy/qc-studio/pull/53): keyboard shortcuts;
-  raised conflicts with typing in notes, missing Play/Pause shortcuts, and
-  narrow-screen label wrapping. Open.
-- [#58](https://github.com/nipoppy/qc-studio/pull/58): review statistics;
-  questioned whether recorded duration reflected review time, requested tests
-  and average-per-subject and grouped-histogram views. Open, changes requested.
-- [#17](https://github.com/nipoppy/qc-studio/pull/17),
-  [#38](https://github.com/nipoppy/qc-studio/pull/38),
-  [#67](https://github.com/nipoppy/qc-studio/pull/67),
-  [#96](https://github.com/nipoppy/qc-studio/pull/96): documentation, fixture
-  and citation PRs; reviewed and approved or closed as superseded.
+| PR | What I found |
+| --- | --- |
+| [#20](https://github.com/nipoppy/qc-studio/pull/20) pagination | My first review here, written in April before I had authored any code in the repo: a duplicated function, session state initialized twice, a missing `dataset_dir` argument, `panels_data` type handling, and a proposed `normalize_selected_panels()` helper to unify two sets of panel keys. |
+| [#95](https://github.com/nipoppy/qc-studio/pull/95) multifacet ratings | Saved ratings masked by all-`None` widgets, facet-name changes breaking saved matching, checkpoint lookup crossing raters and tasks, stale task navigation, filename and wildcard-path edge cases. Retested task switching and wrong-task checkpoints before approving. |
+| [#83](https://github.com/nipoppy/qc-studio/pull/83) saving and checkpoints | Filename and path inconsistencies, checkpoint confusion, altered leading-zero subject IDs, lost autoplay notes, page counts mislabeled as QC records. |
+| [#74](https://github.com/nipoppy/qc-studio/pull/74) filtering and navigation | Autoplay leaving the active filter and moving to hidden subjects; a fully reviewed cohort skipping the congratulations page. |
+| [#25](https://github.com/nipoppy/qc-studio/pull/25) pagination compatibility | Completed uploads sent back to page 1, stale Continue QC widgets, Start Over retaining records, silent duplicate handling, session assumptions, magic display constants. |
+| [#111](https://github.com/nipoppy/qc-studio/pull/111) memory optimization | Two caching styles in two modules; asymmetric invalidation, since the NIfTI key includes file mtime and size but the montage key does not, so a regenerated montage can stay stale; a shared cached dict read-only only by docstring. |
+| [#105](https://github.com/nipoppy/qc-studio/pull/105) documentation site | Verified a strict Sphinx build, demo startup, CLI flags, and export columns. README startup command missing required arguments, docs CI coupled to code tests, pre-commit scope reaching sample data, inconsistent saved-filename examples. |
+| [#10](https://github.com/nipoppy/qc-studio/pull/10), [#53](https://github.com/nipoppy/qc-studio/pull/53), [#58](https://github.com/nipoppy/qc-studio/pull/58) | Overlay colorbar stacking; shortcut conflicts with typing in notes and wrapped button labels; review duration measuring time since last rerun rather than actual review time. |
+| [#17](https://github.com/nipoppy/qc-studio/pull/17), [#38](https://github.com/nipoppy/qc-studio/pull/38), [#67](https://github.com/nipoppy/qc-studio/pull/67), [#96](https://github.com/nipoppy/qc-studio/pull/96) | Documentation, fixture, and citation PRs: reviewed and approved, or closed as superseded. |
 
 Two related reports: [#101](https://github.com/nipoppy/qc-studio/issues/101)
-(Streamlit minimum version for `st.iframe`, closed after #95) and
+(Streamlit minimum version for `st.iframe`) and
 [#112](https://github.com/nipoppy/qc-studio/issues/112) (overwrite warning
 versus retained export rows, open).
 
-Reviewing #95 and #83 mattered on a schedule, not just in principle. Both
-changed the save, checkpoint, and resume paths, and the PPMI QC sessions on
-October 7–9 depended on those paths; #95 merged on October 8, after I retested
-task switching and wrong-task checkpoint uploads on October 6.
-
-This work also informed the Playwright framework: notes persistence and
-autoplay/notes interaction have tests, while save/resume and filtered completion
-remain candidates.
+Reviewing #95 and #83 mattered on a schedule. Both changed the save, checkpoint,
+and resume paths the PPMI sessions depended on, and #95 merged on October 8,
+after I retested task switching and wrong-task checkpoint uploads on October 6.
 
 ## 7. Upstream Niivue Issue
 
