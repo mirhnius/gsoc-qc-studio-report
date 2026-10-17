@@ -22,18 +22,65 @@ filtering and display).
 
 ## How the Design Evolved
 
-The first version added IQM distributions, a reference-data fetching script, and
-reference-comparison plots. Feedback showed a metric dropdown was cumbersome and
-an all-IQM view too dense, so I simplified to a metric grid within each source
-tab.
+The first version did what #12 asked for: IQM distributions, a reference-data
+fetching script, and reference-comparison plots, with a dropdown for choosing a
+metric. Three problems that version exposed drove the rest of the design.
 
-Adapting to the pagination refactor changed the architecture. The top-level
-`iqm_distributions` setting was MRIQC-specific and assumed groupings such as
-`t1w` and `bold`. I replaced it with a per-task `iqm_path` list, following the
-existing `svg_montage_path` pattern, so metrics are part of the configured QC
-task. Each source appears in its own tab; non-MRIQC sources show as generic
-plots or tables. A final cleanup separated reference-data helpers from
-rendering and resolved the reference URL at call time.
+### 1. The reference data was not usable as delivered
+
+Fetching the MRIQC Web API reference population ran for two full days without
+completing, and the partial download was too large to commit to the repository.
+I rewrote the lookup to read cached, filtered Parquet rather than querying the
+API per view, which made the panel usable at all. Extreme values in the
+population then stretched the plot axes far enough to make the dataset
+distribution unreadable, so I added clipping for reference outliers.
+
+The conclusion was that loading the data successfully is not the same as
+displaying it honestly. Rather than ship a comparison I could not vouch for, I
+filed [#82](https://github.com/nipoppy/qc-studio/issues/82), hid the
+"Dataset + reference" mode, and left the infrastructure in place behind it. A
+plausible-looking but wrong reference curve is worse for a reviewer than no
+curve at all.
+
+### 2. A metric dropdown did not match how reviewers work
+
+Review feedback was that selecting metrics one at a time was cumbersome, while
+an all-IQM view was too dense to read. I tried an overview/detail layout with a
+scrollable overview, then simplified to a metric grid inside each source tab so
+a reviewer sees the whole picture first.
+
+Plot changes followed from the same concern. Box plots became violins, which
+show the shape of a distribution rather than just its quartiles. Each tab got
+one shared legend with consistent shapes and colours. The current-subject
+marker was scoped to the active run, with hover text naming it — an unscoped
+distribution tells a reviewer nothing about which measurement belongs to the
+scan in front of them, and an early review caught exactly that case, where the
+highlighted subject was not visible at all.
+
+### 3. The configuration encoded MRIQC assumptions
+
+The original top-level `iqm_distributions` setting hardcoded groupings such as
+`t1w` and `bold`. Review raised that the modality should follow from the QC task
+rather than being chosen in the UI, which pointed at the deeper problem: the
+feature was structured as an MRIQC add-on instead of a property of a QC task.
+
+I replaced it with a per-task `iqm_path` list, deliberately mirroring the
+existing `svg_montage_path` pattern so the configuration would be predictable to
+anyone who already knew the project. Each source became its own tab. MRIQC-like
+sources use curated metric groups; others fall back to generic per-column
+display, so a non-MRIQC pipeline is degraded rather than unsupported. DWI
+support then followed from extending the group registry and inferring the
+modality, with no new display code — the practical test of whether the refactor
+was worth doing.
+
+### Module boundaries
+
+Review also moved the boundaries. I had put the reference maps and download
+helpers in `ui/utils/data_loaders.py`; the argument against it was that a loader
+module should not import `streamlit` and `requests` or hold configuration maps.
+I agreed and moved both into a dedicated `ui/utils/reference_data.py`. A later
+round caught that `URL_PARENT` was resolved at import time, before the app's
+environment was in place, so resolution moved to call time.
 
 ## Viewer Behavior
 

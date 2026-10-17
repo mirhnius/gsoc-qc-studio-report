@@ -151,42 +151,39 @@ upstream Niivue report.
 **Merged:** [PR #22](https://github.com/nipoppy/qc-studio/pull/22), September 10,
 2026. Closes [#12](https://github.com/nipoppy/qc-studio/issues/12) and
 [#23](https://github.com/nipoppy/qc-studio/issues/23).
-Detail: [IQM Viewer Branch](IQM_VIEWER_BRANCH_EXPLANATION.md).
+Full detail: [IQM Viewer Branch](IQM_VIEWER_BRANCH_EXPLANATION.md).
 
 Reviewers could see images but not the numbers MRIQC produces for them. My first
-version did what #12 asked for: a metric dropdown, a dataset distribution, and a
+version did what #12 asked: a metric dropdown, a dataset distribution, and a
 reference population from the MRIQC Web API. Three problems it exposed drove the
 rest of the design.
 
 **The reference data was not usable.** Fetching from the API ran for two days
-without completing, and the partial result was too large to commit. I replaced
-the per-view queries with cached, filtered Parquet, then had to clip extreme
-population values that were stretching the axes. At that point I concluded that
-loading the data was not the same as displaying it honestly, so I filed
+without completing, and the result was too large to commit. I moved to cached,
+filtered Parquet, then had to clip extreme values that were stretching the axes.
+Loading the data was not the same as displaying it honestly, so I filed
 [#82](https://github.com/nipoppy/qc-studio/issues/82) and hid the comparison
 mode, keeping the infrastructure behind it. A plausible but wrong reference curve
 is worse for a reviewer than none.
 
-**One dropdown per metric did not match how reviewers work.** I moved to a metric
-grid per source tab, replaced box plots with violins to show distribution shape,
-gave each tab one shared legend, and scoped the current-subject marker to the
-active run. The marker mattered most: an unscoped distribution tells a reviewer
-nothing about which measurement is theirs.
+**One dropdown per metric did not match how reviewers work.** I moved to a
+metric grid per source tab, replaced box plots with violins, and scoped the
+current-subject marker to the active run — an unscoped distribution tells a
+reviewer nothing about which measurement is theirs.
 
-**The configuration encoded MRIQC assumptions.** A top-level `iqm_distributions`
-setting hardcoded `t1w` and `bold` groupings, which made the feature an MRIQC
-add-on rather than a property of a QC task. I replaced it with a per-task
-`iqm_path` list, mirroring the existing `svg_montage_path` pattern so it would be
-predictable to anyone who knew the project. Each source became a tab; non-MRIQC
-sources fall back to generic per-column display instead of being unsupported.
-DWI support then followed from extending the group registry, with no new display
-code — the practical test of whether the refactor paid off.
+**The configuration encoded MRIQC assumptions.** A top-level setting hardcoded
+`t1w` and `bold` groupings, making the feature an MRIQC add-on rather than a
+property of a QC task. I replaced it with a per-task `iqm_path` list mirroring
+the existing `svg_montage_path` pattern, so it would be predictable to anyone
+who knew the project. DWI support then followed from extending the group
+registry, with no new display code — the practical test of whether the refactor
+paid off.
 
-Review also moved the module boundaries: reference maps and download helpers
-went from `ui/utils/data_loaders.py` into a dedicated `ui/utils/reference_data.py`,
-and the reference URL moved from import-time to call-time resolution. I added
-tests for metric grouping, source loading, widget state, and plot rendering, plus
-sample MRIQC inputs and a DWI test configuration.
+Review also moved the module boundaries, taking reference loading out of
+`data_loaders.py` into its own module. I added tests for metric grouping, source
+loading, widget state, and plot rendering, plus sample MRIQC inputs and a DWI
+test configuration.
+
 
 ## 2. Rating Persistence
 
@@ -256,97 +253,41 @@ documentation links.
 
 **Open draft:** [PR #88](https://github.com/nipoppy/qc-studio/pull/88), from
 [#75](https://github.com/nipoppy/qc-studio/issues/75).
-Detail: [Playwright E2E Branch](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md).
+Full detail: [Playwright E2E Branch](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md).
 
 Three bugs I had worked on (#73, #81, #84) shared a shape: the logic was correct
 in isolation, and the failure lived in the wiring between real widgets, session
 state, and Streamlit's rerun cycle. `ui/tests/` mocks Streamlit out, so by
 construction it cannot see that class of bug. We needed end-to-end tests that
-run automatically, and I made that case in #75 before writing any.
+run automatically, and I argued that in #75 before writing any.
 
-Playwright was new to me, so rather than invent a structure I studied how
-Streamlit's own `e2e_playwright` suite is organised — specifically how it keeps
-tests from breaking when Streamlit's internals change, by wrapping the fragile
-parts so there is one place to fix instead of many. The result is four layers,
-each hiding its mechanics from the one above:
+Playwright was new to me, so instead of inventing a structure I studied how
+Streamlit's own `e2e_playwright` suite is organised — particularly how it stops
+tests breaking when Streamlit's internals change, by wrapping the fragile parts
+so there is one place to fix rather than many. The suite has four layers, each
+hiding its mechanics from the one above: a fixture that launches the real app, a
+fixture that hands over a loaded page, a shared layer owning every selector and
+every rerun wait, and the tests themselves, which know about none of it.
 
-| Layer | Responsibility |
-| --- | --- |
-| `app_server` fixture | Launches a real QC-Studio process on an OS-assigned free port, polls `/_stcore/health` until it serves, and includes the server log in the failure if startup dies. Module-scoped, with a fresh browser page per test so no session state leaks. |
-| `app` fixture | A browser page already loaded and settled on that server. |
-| `shared/` | Every selector and interaction. `waits.py` handles rerun synchronization; `app_utils.py` finds and drives widgets. |
-| `tests/` | Scenarios, which know about none of the above. |
+The hard part is synchronization, because Streamlit reruns the whole script on
+every interaction and a negative assertion can pass against the stale render —
+a green test over a shipped bug. The waits ask the app for its script state
+rather than guessing with timeouts.
 
-**Synchronization is the part that silently breaks tests.** Streamlit reruns the
-whole script on every interaction, so for a few hundred milliseconds the browser
-still shows the previous render. Playwright's retrying hides this most of the
-time, and the case where it doesn't is the dangerous one:
-`expect(error_message).not_to_be_visible()` passes instantly against the stale
-page, before the rerun that would have produced the error — a green test over a
-shipped bug. Instead of guessing with timeouts, the waits ask the app: Streamlit
-publishes `data-test-script-state` on its root element, cycling
-`initial → running → notRunning`, so waiting for `notRunning` means the script
-has finished. The helper also checks the websocket is `CONNECTED` and that no
-loading skeletons remain. Every interaction helper calls it, so a test cannot
-forget to.
+I was also curious about spec-driven development, and this is the concept rather
+than the full method. A contributor fills in a Markdown spec with the scenario
+and what matters about it, hands it to their AI assistant to review and improve,
+lets it implement the test, then runs it themselves and judges whether it does
+what they wanted. The spec makes expected behavior reviewable while
+disagreements are still cheap, and the human stays the one who decides the test
+is right. For that to work across contributors there has to be shared agreement,
+so the branch commits skills for writing tests and reviewing code — committed
+rather than local, so everyone's assistant behaves the same way.
 
-**Tests never call `page.locator()` directly.** Selectors live in one file,
-ordered by robustness: first a widget's explicit `key=`, which Streamlit stamps
-as a stable `st-key-<key>` class and which survives copy changes; then a test ID
-narrowed by visible label, which is what Streamlit's own suite uses; raw CSS
-last. The test IDs were taken from Streamlit's suite, and the two I had to infer
-are marked `UNVERIFIED` in the source with a note on how to re-check them.
+The 11 specifications cover the risky paths; six scenarios are implemented, two
+of them the browser-level versions of #84 and #72. Next: tighten the rerun
+waits, track overwritten exports, and implement the save/resume specs.
 
-That wrapper layer is also where Streamlit's quirks are absorbed once rather
-than in every test: `st.text_area` commits on blur rather than on keystroke, so
-the helper fills and then presses Tab; checkboxes render their real `<input>`
-off-screen, so the helper clicks the visible `<label>` and lets the browser
-forward the event, because dispatching to the hidden input changes the DOM
-without reaching session state; buttons with a `help=` tooltip render a second
-hidden `<button>`, so the locator filters to `:visible`; and `st.error` strips a
-leading emoji into a separate icon, so asserting on a constant authored with
-that emoji needs it stripped first. Every test runs in both Chromium and
-Firefox, deliberately — a suite leaning this hard on Streamlit's DOM cannot
-assume a selector working in one engine works in the other.
-
-One fixture detail worth noting: the default configuration has a single
-participant, which cannot distinguish a real bug from a one-subject edge case —
-autoplay stopping at the end of a one-subject cohort looks identical to a pause
-actually working. So there is a two-subject configuration for specs that need
-genuine navigation. Output goes to a temporary directory the tests own, and an
-`output_files` fixture snapshots it beforehand so an export assertion sees only
-what that test wrote.
-
-**Spec-driven, as a concept.** I was curious about spec-driven development, and
-this is the idea rather than the full method: a Markdown spec is written before
-the test code. The template asks for the screen, the category, the priority,
-and — the question that does the most work — what wiring would break unnoticed
-if this test did not exist, with a note that pure logic belongs in `ui/tests/`
-instead because that is faster and more precise. Then Given/When/Then, where
-"Then" must be something visible on screen; the template contrasts "the rating
-is saved to session state", which is invisible and untestable, with "the PASS
-button renders as selected". It also asks which `ui/constants.py` keys the test
-should assert on, so strings are imported rather than hardcoded.
-
-The intended workflow for a contributor is: fill in the spec with the scenario
-and what you think matters, hand it to your AI assistant of choice to review and
-improve the spec, let it implement the test, then run it yourself and judge
-whether it does what you wanted. Writing the spec first makes expected behavior
-reviewable while disagreements are still cheap, and the human stays the one who
-decides the test is right.
-
-For that to work across contributors there has to be shared agreement on
-conventions, which is why the branch commits skills for writing tests and for
-reviewing code, alongside the e2e orientation. They are committed rather than
-local so that anyone using an AI assistant on this repo gets the same behavior
-instead of each contributor's assistant inventing its own. Their scope is still
-open for discussion with the maintainer and could be split into a separate PR.
-
-The 11 specifications cover the risky paths — validation, ratings surviving
-navigation, upload and resume, overwrite protection, checkpoints, notes,
-autoplay. Six scenarios are implemented, and the two workflow tests are the
-browser-level versions of #84 and #72. Next: tighten the rerun waits, track
-overwritten exports, and implement the save/resume specs.
 
 ## 5. Evidence Bundles: An LLM Companion for QC
 
@@ -354,52 +295,43 @@ overwritten exports, and implement the save/resume specs.
 issues [#24](https://github.com/nipoppy/qc-studio/issues/24),
 [#33](https://github.com/nipoppy/qc-studio/issues/33),
 [#40](https://github.com/nipoppy/qc-studio/issues/40).
-Detail: [Evidence Bundle Branch](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md).
+Full detail: [Evidence Bundle Branch](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md).
 
 **The purpose was a companion, not an automated rater.** Deciding whether a scan
-passes is a hard problem, and the right tool for it would be a model trained for
-that task — a classifier or a deep-learning model — not a general language model.
-Even purpose-trained models are not reliably successful at it, so asking an LLM
-for the final verdict is the wrong use of it. What an LLM can usefully do is
-point out the possible issues in a scan and say what to follow up on: what to
-look at next, and what the reviewer should judge for themselves. The decision
-stays with the human. That framing shaped everything in the design.
+passes is a hard problem, and the right tool would be a model trained for it — a
+classifier or deep-learning model — not a general language model. Even
+purpose-trained models are not reliably successful at it, so asking an LLM for
+the final verdict is the wrong use of it. What an LLM can usefully do is point
+out the possible issues and say what to follow up on: what to look at next, and
+what the reviewer should judge for themselves. The decision stays with the
+human, and that framing shaped the whole design.
 
-**What the package contains.** For one subject and session, the builder assembles
-a Markdown file holding the IQMs that matter — those that are statistical
-outliers, plus those known to be important for that modality — the statistics
-around each one, and the instructions telling the model how to behave. The
-per-metric context comes from a dictionary I built by extracting the MRIQC
-documentation with Codex: what each metric means, which direction is concerning,
-and when it is informative. So a metric reaches the model with its interpretation
-attached, instead of as a bare number.
+**The package.** For one subject and session, the builder assembles a Markdown
+file holding the IQMs that matter — statistical outliers plus those important
+for that modality — the statistics around each, and the instructions telling the
+model how to behave. The per-metric context comes from a dictionary I built by
+extracting the MRIQC documentation with Codex: what each metric means, which
+direction is concerning, when it is informative. A metric therefore reaches the
+model already interpreted rather than as a bare number.
 
 **The intended product.** On starting a session, a batch of subjects would be
 sent to the model, and each subject's summary of possible problems and suggested
-next steps would be shown to the reviewer as a pop-up when they reach that
-subject. Summarization first; a chat interface for asking follow-up questions
-about that subject's data would come later.
+next steps would be shown as a pop-up when the reviewer reaches them.
+Summarization first, with a chat interface for follow-up questions later.
 
-**Where it stopped.** The text stage worked: the Claude API read the Markdown
-package and returned a structured response, validated with Pydantic against a
-schema requiring a decision, confidence, summary, flagged metrics, reasons, and
-recommended follow-up. Both the package and the response are kept, so a result
-can be traced to the evidence that produced it. The next step was adding images,
-and [#40](https://github.com/nipoppy/qc-studio/issues/40) works through the
-options for which parts of a volume to send. That step needed the local
-vision model the project intended to use, and I could not run it on my own
-machine — MPS failed on memory and allocation, and the CPU fallback was too slow
-to iterate on — while the server for it was not yet available. So the work
-stopped there rather than at a design dead end.
+**Where it stopped.** The text stage worked: the Claude API read the package and
+returned a structured response, validated with Pydantic. Images were the next
+step, and that needed the local vision model the project intended to use. I
+could not run it on my own machine, and the server for it was not yet available,
+so the work stopped there rather than at a design dead end.
 
-**What the experiments showed.** Across three MR-ART acquisitions of one subject
-the responses were `uncertain`, `uncertain`, and `fail`, with the clearly
-degraded scan the easiest to call. More usefully, the small local models returned
-schema-valid JSON that still confused metric values with percentiles and flagged
-metrics contradicting their own prose. Format validity and correct reasoning are
+**What the experiments showed.** The small local models returned schema-valid
+JSON that still confused metric values with percentiles and flagged metrics
+contradicting their own prose. Format validity and correct reasoning are
 separate problems, and only the first is cheap to check automatically — which is
 the strongest argument for keeping this a companion that surfaces things to
-check, rather than anything that produces a rating.
+check rather than anything that produces a rating.
+
 
 ## 6. Code Review and Workflow Testing
 
