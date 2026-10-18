@@ -20,14 +20,14 @@
 **The work**
 
 - [1. IQM Viewer](#1-iqm-viewer) — quantitative evidence beside the images
-- [2. Rating Persistence and Test Coverage](#2-rating-persistence-and-test-coverage)
-  — the bug that silently lost ratings, and the tests that followed
-- [3. Caching and Continuous Integration](#3-caching-and-continuous-integration)
-  — montage caching, and the project's first automated checks
-- [4. Playwright Browser Testing](#4-playwright-browser-testing) — a
-  browser-level test suite and its spec-first workflow
-- [5. Evidence Bundles for LLM-Assisted QC](#5-evidence-bundles-for-llm-assisted-qc)
+- [2. Evidence Bundles for LLM-Assisted QC](#2-evidence-bundles-for-llm-assisted-qc)
   — packaging QC evidence for a model as a reviewer's companion
+- [3. Playwright Browser Testing](#3-playwright-browser-testing) — a
+  browser-level test suite and its spec-first workflow
+- [4. Rating Persistence and Test Coverage](#4-rating-persistence-and-test-coverage)
+  — the bug that silently lost ratings, and the tests that followed
+- [5. Caching and Continuous Integration](#5-caching-and-continuous-integration)
+  — montage caching, and the project's first automated checks
 - [6. Code Review](#6-code-review) — findings across 14 PRs by other
   contributors
 - [7. Upstream Niivue Contribution](#7-upstream-niivue-contribution) — a
@@ -211,7 +211,7 @@ in the middle of the QC window.
 I could experiment with open-weight models locally. In practice the
 infrastructure for that was not available: the models I could actually run on my
 laptop were too small for the task, and the larger ones would not run at all.
-Section 5 describes what this allowed and what it ruled out. The work therefore
+Section 2 describes what this allowed and what it ruled out. The work therefore
 stopped at a sandbox, which is an honest finding about what this line of research
 needs rather than a result I could extend by trying harder.
 
@@ -278,151 +278,7 @@ investigation, the implementation, and the tests are written up in full in
 **[IQM Viewer Branch](IQM_VIEWER_BRANCH_EXPLANATION.md)**, which is where to
 start if you are picking this work up.
 
-## 2. Rating Persistence and Test Coverage
-
-**Merged:** [PR #76](https://github.com/nipoppy/qc-studio/pull/76), September 2,
-2026, fixing [#73](https://github.com/nipoppy/qc-studio/issues/73).
-
-A reviewer reported that ratings selected during autoplay were sometimes missing
-from the saved output. The report was intermittent, so the first step was
-framing it as a timing problem: I opened #73 around the hypothesis that clicks
-near the automatic-advance boundary were the ones being lost.
-
-Reading the code confirmed it. A rating click never saved itself. It only
-reached the record when the autoplay timer next polled `session_state`, and each
-page advance rotated the widget key, so a click landing after an advance was
-read from a key that no longer belonged to the subject being rated. The rating
-disappeared with no error, and nothing in the save path was broken, which is why
-ordinary use did not reveal it.
-
-The fix was to stop the timer owning persistence: the rating now saves itself
-through the widget's `on_change` callback, with a guard so an empty read cannot
-overwrite an existing value and a short grace period so a click made right on
-the advance boundary still lands.
-
-**The underlying problem is Streamlit.** It is not equipped for this level of
-accuracy. Its model — rerun the whole script on every interaction, keep state in
-widget keys — leaves no reliable moment to capture a value that arrives while
-the page is changing underneath it, and autoplay makes that worse because the
-page changes on a timer rather than in response to the reviewer. This fix
-narrows the window; it does not remove the class of problem, which is why I
-later argued for browser-level tests.
-
-**Looking closely surfaced more.** Working through this part of the codebase
-turned up further problems, which I reported rather than silently worked around:
-notes discarded on forced navigation
-([#84](https://github.com/nipoppy/qc-studio/issues/84)), partial progress lost
-with no way to save it ([#81](https://github.com/nipoppy/qc-studio/issues/81)),
-notes not persisting to the saved TSV
-([#11](https://github.com/nipoppy/qc-studio/issues/11)), autoplay continuing
-after a return to the landing page
-([#78](https://github.com/nipoppy/qc-studio/issues/78)), the IQM panel being
-unreliable during automatic advance
-([#77](https://github.com/nipoppy/qc-studio/issues/77)), and autoplay counting
-image loading as review time
-([#72](https://github.com/nipoppy/qc-studio/issues/72)). The first three are now
-closed, fixed by other contributors.
-
-**There were no tests for the QC viewer.** `ui/tests/test_qc_viewer.py` was 26
-lines covering a single filename helper — nothing exercised rating persistence,
-automatic advance, record saving, pagination, or the countdown. So I wrote them:
-roughly 800 lines covering those paths, including a test that would fail under
-the original bug.
-
-Writing them meant working through the implementation rather than reading it,
-and that is where most of my understanding of this codebase came from. It is
-also what made the later work possible: the review findings in #95, #83, and #74
-are about the same save, navigation, and session-state paths I had to understand
-in order to test them.
-
-## 3. Caching and Continuous Integration
-
-**Montage caching** ([PR #62](https://github.com/nipoppy/qc-studio/pull/62),
-closes [#43](https://github.com/nipoppy/qc-studio/issues/43)). Montages were
-re-read and re-rendered on every widget interaction. Caching is the obvious move;
-the real work is the cache key, which required normalizing the path list to a
-tuple so Streamlit could use it. I kept `load_svg_data()` as the public entry
-point and moved the expensive loading, conversion, and assembly into a cached
-helper, so callers did not change. I deliberately left `st.fragment` out of the
-same pass and said why in the PR: fragmenting the rating and notes panel risked
-widget state going stale when the participant changed, which is the bug class I
-had just fixed in #76.
-
-**CI and local checks** ([PR #39](https://github.com/nipoppy/qc-studio/pull/39),
-from my proposal in [#35](https://github.com/nipoppy/qc-studio/issues/35)). The
-project had no automated checks, so the question was how much to introduce at
-once. I staged it: Black, Flake8, and codespell first, with the test workflow
-left as an explicit follow-up, because which tests gate every PR is a maintainer
-decision rather than something to settle inside a configuration PR. Adding a
-formatter to an existing codebase also produces a large diff, which should not
-ride along with a behavioral change.
-
-Pre-commit runs the same tools against the same configuration files as CI, so
-hooks and CI cannot disagree, and the file filters are scoped to `ui/` and
-`pipelines/` Python plus named config files so whitespace hooks do not rewrite
-sample data. A local pytest hook runs the UI tests before a commit instead of
-after a push.
-
-Two smaller maintenance PRs came out of working in the code:
-[#34](https://github.com/nipoppy/qc-studio/pull/34) replaced SVG-specific
-wording with montage terminology once the panel handled 2D images generally, and
-[#66](https://github.com/nipoppy/qc-studio/pull/66) repaired broken
-documentation links.
-
-## 4. Playwright Browser Testing
-
-**Open draft:** [PR #88](https://github.com/nipoppy/qc-studio/pull/88), from
-[#75](https://github.com/nipoppy/qc-studio/issues/75).
-
-Three bugs I had worked on (#73, #81, #84) shared a shape: the logic was correct
-in isolation, and the failure lived in the wiring between real widgets, session
-state, and Streamlit's rerun cycle. `ui/tests/` mocks Streamlit out, so by
-construction it cannot see that class of bug. We needed end-to-end tests that
-run automatically, and I argued that in #75 before writing any.
-
-Playwright was new to me, so instead of inventing a structure I studied how
-Streamlit's own `e2e_playwright` suite is organised — particularly how it stops
-tests breaking when Streamlit's internals change, by wrapping the fragile parts
-so there is one place to fix rather than many. The suite has four layers, each
-hiding its mechanics from the one above: a fixture that launches the real app, a
-fixture that hands over a loaded page, a shared layer owning every selector and
-every rerun wait, and the tests themselves, which know about none of it.
-
-```mermaid
-flowchart TD
-  T["tests/<br/>scenarios, which know about none of the below"] --> S
-  S["shared/<br/>every selector · every rerun wait"] --> A
-  A["app fixture<br/>a page already loaded and settled"] --> V
-  V["app_server fixture<br/>a real QC-Studio process on a free port"]
-```
-
-The hard part is synchronization, because Streamlit reruns the whole script on
-every interaction and a negative assertion can pass against the stale render —
-a green test over a shipped bug. The waits ask the app for its script state
-rather than guessing with timeouts.
-
-I was also curious about spec-driven development, and this is the concept rather
-than the full method. A contributor fills in a Markdown spec with the scenario
-and what matters about it, hands it to their AI assistant to review and improve,
-lets it implement the test, then runs it themselves and judges whether it does
-what they wanted. The spec makes expected behavior reviewable while
-disagreements are still cheap, and the human stays the one who decides the test
-is right. For that to work across contributors there has to be shared agreement,
-so the branch commits skills for writing tests and reviewing code — committed
-rather than local, so everyone's assistant behaves the same way.
-
-The 11 specifications cover the risky paths; six scenarios are implemented, two
-of them the browser-level versions of #84 and #72. Next: tighten the rerun
-waits, track overwritten exports, and implement the save/resume specs.
-
-This section is a summary. The four layers, the synchronization problem, the
-selector strategy and the Streamlit quirks it absorbs, the specification
-template, and the shared conventions are documented in full in
-**[Playwright E2E Branch](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md)**, which is
-where to start if you are picking this work up.
-
-
-## 5. Evidence Bundles for LLM-Assisted QC
+## 2. Evidence Bundles for LLM-Assisted QC
 
 **Experimental:** [`evidence_bundle` branch](https://github.com/nipoppy/qc-studio/tree/evidence_bundle),
 issues [#24](https://github.com/nipoppy/qc-studio/issues/24),
@@ -482,6 +338,150 @@ that stopped the work are written up in full in
 **[Evidence Bundle Branch](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md)**, which is
 where to start if you are picking this work up.
 
+
+## 3. Playwright Browser Testing
+
+**Open draft:** [PR #88](https://github.com/nipoppy/qc-studio/pull/88), from
+[#75](https://github.com/nipoppy/qc-studio/issues/75).
+
+Three bugs I had worked on (#73, #81, #84) shared a shape: the logic was correct
+in isolation, and the failure lived in the wiring between real widgets, session
+state, and Streamlit's rerun cycle. `ui/tests/` mocks Streamlit out, so by
+construction it cannot see that class of bug. We needed end-to-end tests that
+run automatically, and I argued that in #75 before writing any.
+
+Playwright was new to me, so instead of inventing a structure I studied how
+Streamlit's own `e2e_playwright` suite is organised — particularly how it stops
+tests breaking when Streamlit's internals change, by wrapping the fragile parts
+so there is one place to fix rather than many. The suite has four layers, each
+hiding its mechanics from the one above: a fixture that launches the real app, a
+fixture that hands over a loaded page, a shared layer owning every selector and
+every rerun wait, and the tests themselves, which know about none of it.
+
+```mermaid
+flowchart TD
+  T["tests/<br/>scenarios, which know about none of the below"] --> S
+  S["shared/<br/>every selector · every rerun wait"] --> A
+  A["app fixture<br/>a page already loaded and settled"] --> V
+  V["app_server fixture<br/>a real QC-Studio process on a free port"]
+```
+
+The hard part is synchronization, because Streamlit reruns the whole script on
+every interaction and a negative assertion can pass against the stale render —
+a green test over a shipped bug. The waits ask the app for its script state
+rather than guessing with timeouts.
+
+I was also curious about spec-driven development, and this is the concept rather
+than the full method. A contributor fills in a Markdown spec with the scenario
+and what matters about it, hands it to their AI assistant to review and improve,
+lets it implement the test, then runs it themselves and judges whether it does
+what they wanted. The spec makes expected behavior reviewable while
+disagreements are still cheap, and the human stays the one who decides the test
+is right. For that to work across contributors there has to be shared agreement,
+so the branch commits skills for writing tests and reviewing code — committed
+rather than local, so everyone's assistant behaves the same way.
+
+The 11 specifications cover the risky paths; six scenarios are implemented, two
+of them the browser-level versions of #84 and #72. Next: tighten the rerun
+waits, track overwritten exports, and implement the save/resume specs.
+
+This section is a summary. The four layers, the synchronization problem, the
+selector strategy and the Streamlit quirks it absorbs, the specification
+template, and the shared conventions are documented in full in
+**[Playwright E2E Branch](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md)**, which is
+where to start if you are picking this work up.
+
+
+## 4. Rating Persistence and Test Coverage
+
+**Merged:** [PR #76](https://github.com/nipoppy/qc-studio/pull/76), September 2,
+2026, fixing [#73](https://github.com/nipoppy/qc-studio/issues/73).
+
+A reviewer reported that ratings selected during autoplay were sometimes missing
+from the saved output. The report was intermittent, so the first step was
+framing it as a timing problem: I opened #73 around the hypothesis that clicks
+near the automatic-advance boundary were the ones being lost.
+
+Reading the code confirmed it. A rating click never saved itself. It only
+reached the record when the autoplay timer next polled `session_state`, and each
+page advance rotated the widget key, so a click landing after an advance was
+read from a key that no longer belonged to the subject being rated. The rating
+disappeared with no error, and nothing in the save path was broken, which is why
+ordinary use did not reveal it.
+
+The fix was to stop the timer owning persistence: the rating now saves itself
+through the widget's `on_change` callback, with a guard so an empty read cannot
+overwrite an existing value and a short grace period so a click made right on
+the advance boundary still lands.
+
+**The underlying problem is Streamlit.** It is not equipped for this level of
+accuracy. Its model — rerun the whole script on every interaction, keep state in
+widget keys — leaves no reliable moment to capture a value that arrives while
+the page is changing underneath it, and autoplay makes that worse because the
+page changes on a timer rather than in response to the reviewer. This fix
+narrows the window; it does not remove the class of problem, which is why I
+later argued for browser-level tests.
+
+**Looking closely surfaced more.** Working through this part of the codebase
+turned up further problems, which I reported rather than silently worked around:
+notes discarded on forced navigation
+([#84](https://github.com/nipoppy/qc-studio/issues/84)), partial progress lost
+with no way to save it ([#81](https://github.com/nipoppy/qc-studio/issues/81)),
+notes not persisting to the saved TSV
+([#11](https://github.com/nipoppy/qc-studio/issues/11)), autoplay continuing
+after a return to the landing page
+([#78](https://github.com/nipoppy/qc-studio/issues/78)), the IQM panel being
+unreliable during automatic advance
+([#77](https://github.com/nipoppy/qc-studio/issues/77)), and autoplay counting
+image loading as review time
+([#72](https://github.com/nipoppy/qc-studio/issues/72)). The first three are now
+closed, fixed by other contributors.
+
+**There were no tests for the QC viewer.** `ui/tests/test_qc_viewer.py` was 26
+lines covering a single filename helper — nothing exercised rating persistence,
+automatic advance, record saving, pagination, or the countdown. So I wrote them:
+roughly 800 lines covering those paths, including a test that would fail under
+the original bug.
+
+Writing them meant working through the implementation rather than reading it,
+and that is where most of my understanding of this codebase came from. It is
+also what made the later work possible: the review findings in #95, #83, and #74
+are about the same save, navigation, and session-state paths I had to understand
+in order to test them.
+
+## 5. Caching and Continuous Integration
+
+**Montage caching** ([PR #62](https://github.com/nipoppy/qc-studio/pull/62),
+closes [#43](https://github.com/nipoppy/qc-studio/issues/43)). Montages were
+re-read and re-rendered on every widget interaction. Caching is the obvious move;
+the real work is the cache key, which required normalizing the path list to a
+tuple so Streamlit could use it. I kept `load_svg_data()` as the public entry
+point and moved the expensive loading, conversion, and assembly into a cached
+helper, so callers did not change. I deliberately left `st.fragment` out of the
+same pass and said why in the PR: fragmenting the rating and notes panel risked
+widget state going stale when the participant changed, which is the bug class I
+had just fixed in #76.
+
+**CI and local checks** ([PR #39](https://github.com/nipoppy/qc-studio/pull/39),
+from my proposal in [#35](https://github.com/nipoppy/qc-studio/issues/35)). The
+project had no automated checks, so the question was how much to introduce at
+once. I staged it: Black, Flake8, and codespell first, with the test workflow
+left as an explicit follow-up, because which tests gate every PR is a maintainer
+decision rather than something to settle inside a configuration PR. Adding a
+formatter to an existing codebase also produces a large diff, which should not
+ride along with a behavioral change.
+
+Pre-commit runs the same tools against the same configuration files as CI, so
+hooks and CI cannot disagree, and the file filters are scoped to `ui/` and
+`pipelines/` Python plus named config files so whitespace hooks do not rewrite
+sample data. A local pytest hook runs the UI tests before a commit instead of
+after a push.
+
+Two smaller maintenance PRs came out of working in the code:
+[#34](https://github.com/nipoppy/qc-studio/pull/34) replaced SVG-specific
+wording with montage terminology once the panel handled 2D images generally, and
+[#66](https://github.com/nipoppy/qc-studio/pull/66) repaired broken
+documentation links.
 
 ## 6. Code Review
 

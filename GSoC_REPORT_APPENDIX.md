@@ -53,7 +53,7 @@ recorded under review and maintenance below.
 
 The additional upstream issue is
 [niivue/niivue-vscode #314](https://github.com/niivue/niivue-vscode/issues/314),
-described in [Section 7 of the main report](GSoC_FINAL_REPORT.md#7-upstream-niivue-issue).
+described in [Section 7 of the main report](GSoC_FINAL_REPORT.md#7-upstream-niivue-contribution).
 
 ## Appendix C: Review and Comment Activity on Others' PRs
 
