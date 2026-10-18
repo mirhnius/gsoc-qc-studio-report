@@ -47,10 +47,14 @@ Coordinating Facility)
 
 Full records of every PR, issue, review, merge, and closure are in the
 [appendices](GSoC_REPORT_APPENDIX.md). To run QC-Studio yourself, the
-[Quickstart](https://github.com/nipoppy/qc-studio/blob/main/docs/source/overview/quickstart.md)
-walks through the bundled demo, and
-[Configuration](https://github.com/nipoppy/qc-studio/blob/main/docs/source/guides/configuration.md)
-covers pointing it at your own data.
+[Quickstart](https://qc-studio--105.org.readthedocs.build/en/105/overview/quickstart.html)
+walks through the bundled demo and
+[Configuration](https://qc-studio--105.org.readthedocs.build/en/105/guides/configuration.html)
+covers pointing it at your own data. Both are preview builds of the
+documentation site in [#105](https://github.com/nipoppy/qc-studio/pull/105); the
+published site replaces them once it merges, and the
+[Markdown sources](https://github.com/nipoppy/qc-studio/tree/main/docs/source)
+are in the repository meanwhile.
 
 ---
 
