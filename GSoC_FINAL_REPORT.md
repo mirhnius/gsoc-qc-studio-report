@@ -471,11 +471,6 @@ Most of what I caught were quiet failures — cases where the application would
 have carried on without an error, which is exactly what a reviewer working
 through a cohort would not notice.
 
-Two of those reviews mattered on a schedule: #95 and #83 both changed the save,
-checkpoint, and resume paths the PPMI sessions depended on, and #95 merged on
-October 8, after I retested task switching and wrong-task checkpoint uploads on
-the 6th.
-
 **For the details** — every review, what I found in it, and links to the
 comments — see
 [Appendix C](GSoC_REPORT_APPENDIX.md#appendix-c-review-and-comment-activity-on-others-prs).
