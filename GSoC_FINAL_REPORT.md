@@ -249,29 +249,23 @@ degraded rather than unsupported.
 
 ![The IQM panel during a DWI review, showing two metric-source tabs, grouped violin plots, and the current subject marked on each distribution](images/iqm-viewer.png)
 
-*The IQM panel reviewing `sub-CMH0001`, `ses-01`. The two tabs are the task's
-two configured metric sources — a group TSV and a per-subject JSON sidecar —
-each rendered in its own tab. Metrics are drawn in curated groups (BDIFFS,
-EFC_SHELLS, FA, FBER_SHELLS) as violins showing the distribution across the
-dataset, with the orange diamond marking where the scan under review falls, and
-one shared legend for the whole tab. The rating widget and autoplay controls
-sit alongside, so the decision is made on the same screen as the evidence.*
+*Reviewing `sub-CMH0001`, `ses-01`. The two tabs are the task's two configured
+metric sources; the orange diamond marks where this scan falls in each dataset
+distribution, with the rating controls on the same screen.*
 
-**How it got there.** The first version supported only MRIQC, through a
-top-level setting that hardcoded modality groupings. Redesigning it around a
-per-task `iqm_path` list — mirroring the existing `svg_montage_path` pattern —
-made metrics a property of a QC task rather than an MRIQC add-on, and that is
-what made the panel general. The test of whether it worked came with diffusion
-support, which needed only an extension to the metric registry and no new
-display code.
+**How it got there.** The first version was MRIQC-only, with modality groupings
+hardcoded in a top-level setting. Moving to a per-task `iqm_path` list, mirroring
+the existing `svg_montage_path` pattern, made metrics a property of a QC task
+rather than an MRIQC add-on — and that is what made the panel general. Diffusion
+support then needed only an extension to the metric registry, no new display
+code.
 
-**Reference comparison is built but disabled.** Comparing a scan against an
-MRIQC reference population is implemented behind a hidden control. Collecting
-that data proved slow and incomplete, and the population distribution turned out
-markedly different from the dataset under review — a comparison that would
-mislead a reviewer more than inform them.
-[#82](https://github.com/nipoppy/qc-studio/issues/82) tracks the cleanup and the
-guard it needs before it returns.
+**Reference comparison is built but disabled.** Comparison against an MRIQC
+reference population sits behind a hidden control: the population distribution
+turned out markedly different from the dataset under review, which would mislead
+a reviewer more than inform them.
+[#82](https://github.com/nipoppy/qc-studio/issues/82) tracks what it needs
+before it returns.
 
 This section is a summary. The design evolution, the reference-data
 investigation, the implementation, and the tests are written up in full in
@@ -398,33 +392,29 @@ where to start if you are picking this work up.
 2026, fixing [#73](https://github.com/nipoppy/qc-studio/issues/73).
 
 A reviewer reported that ratings selected during autoplay were sometimes missing
-from the saved output. The report was intermittent, so the first step was
-framing it as a timing problem: I opened #73 around the hypothesis that clicks
-near the automatic-advance boundary were the ones being lost.
+from the saved output. The report was intermittent, so I framed it as a timing
+problem and opened #73 around the hypothesis that clicks near the
+automatic-advance boundary were the ones being lost.
 
-Reading the code confirmed it. A rating click never saved itself. It only
-reached the record when the autoplay timer next polled `session_state`, and each
-page advance rotated the widget key, so a click landing after an advance was
-read from a key that no longer belonged to the subject being rated. The rating
-disappeared with no error, and nothing in the save path was broken, which is why
-ordinary use did not reveal it.
-
-The fix was to stop the timer owning persistence: the rating now saves itself
-through the widget's `on_change` callback, with a guard so an empty read cannot
-overwrite an existing value and a short grace period so a click made right on
-the advance boundary still lands.
+The code confirmed it. A rating click never saved itself; it only reached the
+record when the autoplay timer next polled `session_state`. Each advance rotated
+the widget key, so a click landing after one was read from a key that no longer
+belonged to the subject being rated, and the rating disappeared with no error.
+The fix was to stop the timer owning persistence: the rating now saves through
+the widget's `on_change` callback, guarded so an empty read cannot overwrite an
+existing value.
 
 **The underlying problem is Streamlit.** It is not equipped for this level of
-accuracy. Its model — rerun the whole script on every interaction, keep state in
-widget keys — leaves no reliable moment to capture a value that arrives while
-the page is changing underneath it, and autoplay makes that worse because the
-page changes on a timer rather than in response to the reviewer. This fix
-narrows the window; it does not remove the class of problem, which is why I
-later argued for browser-level tests.
+accuracy. Rerunning the whole script on every interaction, with state in widget
+keys, leaves no reliable moment to capture a value arriving while the page
+changes underneath it — and autoplay makes that worse, because the page changes
+on a timer rather than in response to the reviewer. This fix narrows the window
+without removing the class of problem, which is why I later argued for
+browser-level tests.
 
 **Looking closely surfaced more.** Working through this part of the codebase
-turned up further problems, which I reported rather than silently worked around:
-notes discarded on forced navigation
+turned up further problems, which I reported rather than worked around: notes
+discarded on forced navigation
 ([#84](https://github.com/nipoppy/qc-studio/issues/84)), partial progress lost
 with no way to save it ([#81](https://github.com/nipoppy/qc-studio/issues/81)),
 notes not persisting to the saved TSV
@@ -439,15 +429,10 @@ closed, fixed by other contributors.
 
 **There were no tests for the QC viewer.** `ui/tests/test_qc_viewer.py` was 26
 lines covering a single filename helper — nothing exercised rating persistence,
-automatic advance, record saving, pagination, or the countdown. So I wrote them:
-roughly 800 lines covering those paths, including a test that would fail under
-the original bug.
-
-Writing them meant working through the implementation rather than reading it,
-and that is where most of my understanding of this codebase came from. It is
-also what made the later work possible: the review findings in #95, #83, and #74
-are about the same save, navigation, and session-state paths I had to understand
-in order to test them.
+automatic advance, record saving, pagination, or the countdown. I added roughly
+800 lines covering those paths, including a test that fails under the original
+bug. Writing them meant working through the implementation rather than reading
+it, and that is where most of my understanding of this codebase came from.
 
 ## 5. Caching and Continuous Integration
 
