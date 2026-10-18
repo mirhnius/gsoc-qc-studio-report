@@ -573,11 +573,8 @@ was implemented by another contributor, it is credited to them throughout.
 ## Acknowledgements
 
 Thank you to my GSoC mentors, especially Nikhil Bhagwat, for their guidance
-throughout this project.
-
-Thank you to [INCF](https://www.incf.org/) for hosting this project in Google
-Summer of Code 2026, and to the Niivue maintainers for responding to the
-loading-event request and implementing it upstream.
+throughout this project and [INCF](https://www.incf.org/) for hosting this project in Google
+Summer of Code 2026.
 
 ## More Detail
 
