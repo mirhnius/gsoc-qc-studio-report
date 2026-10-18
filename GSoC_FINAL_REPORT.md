@@ -1,3 +1,5 @@
+<img src="images/gsoc-logo.png" alt="Google Summer of Code" width="420">
+
 # Google Summer of Code 2026: QC-Studio Contribution Report
 
 **Contributor:** Niusha ([mirhnius](https://github.com/mirhnius))  
