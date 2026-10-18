@@ -571,14 +571,27 @@ was implemented by another contributor, it is credited to them throughout.
 
 ## Acknowledgements
 
-Thank you to [INCF](https://www.incf.org/) for hosting this project in Google
-Summer of Code 2026, and for the administration and community that made the
-placement possible.
+My thanks above all to **Nikhil Bhagwat** (McGill University), my mentor, whose
+review shaped most of what is in this report. The IQM viewer is the clearest
+example: his comments turned it from an MRIQC add-on into a per-task component,
+moved the reference-data handling into its own module, and argued for hiding the
+reference comparison until the data could be trusted — each of which made the
+feature better than the version I first proposed. Beyond the code, he gave me
+room to work on what the project actually needed rather than only what my
+proposal listed, and trusted me with reviewing and merging other contributors'
+work. That trust is the reason this report has as much review in it as
+implementation.
 
-Thank you to Nikhil Bhagwat and the QC-Studio contributors for feedback,
-discussion of review workflows, and collaboration on testing and stabilizing the
-application, and to the Niivue maintainers for responding to the loading-event
-request.
+Thank you to the QC-Studio contributors I worked alongside — Ghazaleh
+Mohammadalinejad (CAMH), Thomas Tan (Stanford University), Michelle Wang,
+Patrick Sadil (Johns Hopkins University), Manon Heffernan (Institut du Cerveau —
+ICM), Simon R. Steinkamp, and Laura Piro — for the code I reviewed, the reviews
+of mine they responded to, and the discussions about what the review workflow
+should do.
+
+Thank you to [INCF](https://www.incf.org/) for hosting this project in Google
+Summer of Code 2026, and to the Niivue maintainers for responding to the
+loading-event request and implementing it upstream.
 
 ## More Detail
 
