@@ -572,12 +572,8 @@ was implemented by another contributor, it is credited to them throughout.
 
 ## Acknowledgements
 
-Thank you to my GSoC mentors, especially **Nikhil Bhagwat**, for their guidance
+Thank you to my GSoC mentors, especially Nikhil Bhagwat, for their guidance
 throughout this project.
-
-Thank you to the QC-Studio contributors I worked alongside: Ghazaleh
-Mohammadalinejad, Thomas Tan, Michelle Wang, Patrick Sadil, Manon Heffernan,
-Simon R. Steinkamp, and Laura Piro.
 
 Thank you to [INCF](https://www.incf.org/) for hosting this project in Google
 Summer of Code 2026, and to the Niivue maintainers for responding to the
