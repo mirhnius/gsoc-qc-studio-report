@@ -2,6 +2,8 @@
 
 **Contributor:** Niusha ([mirhnius](https://github.com/mirhnius))  
 **Project:** [QC-Studio](https://github.com/nipoppy/qc-studio)  
+**Organization:** [INCF](https://www.incf.org/) (International Neuroinformatics
+Coordinating Facility)  
 **Contribution period:** April–October 2026 · **Status checked:** October 17, 2026
 
 ---
@@ -586,6 +588,10 @@ model experiments come from my own records rather than that history. Where a fix
 was implemented by another contributor, it is credited to them throughout.
 
 ## Acknowledgements
+
+Thank you to [INCF](https://www.incf.org/) for hosting this project in Google
+Summer of Code 2026, and for the administration and community that made the
+placement possible.
 
 Thank you to Nikhil Bhagwat and the QC-Studio contributors for feedback,
 discussion of review workflows, and collaboration on testing and stabilizing the

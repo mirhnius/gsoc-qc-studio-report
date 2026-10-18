@@ -1,6 +1,7 @@
 # QC-Studio GSoC Report: Appendices
 
 **Contributor:** Niusha ([mirhnius](https://github.com/mirhnius))  
+**Organization:** [INCF](https://www.incf.org/) · **Project:** [QC-Studio](https://github.com/nipoppy/qc-studio)  
 **Contribution status checked:** October 17, 2026
 
 These appendices contain the detailed contribution records supporting the
