@@ -462,32 +462,35 @@ documentation links.
 
 ## 6. Code Review
 
-I combined code reading with manual checks of real review sessions, focusing on
-whether ratings and notes survive navigation, filtering, saving, and resuming.
-Where possible I retested fixes before approving. Implementations in other
-contributors' PRs are theirs; these are my review findings. Comment-level records
-are in [Appendix C](GSoC_REPORT_APPENDIX.md#appendix-c-review-and-comment-activity-on-others-prs).
+I reviewed 14 PRs by other contributors, combining code reading with manual
+checks of real review sessions and focusing on whether ratings and notes survive
+navigation, filtering, saving, and resuming. Where possible I retested fixes
+before approving. The implementations are their authors'; these are my findings.
 
-| PR | What I found |
-| --- | --- |
-| [#20](https://github.com/nipoppy/qc-studio/pull/20) pagination | My first review here, written in April before I had authored any code in the repo: a duplicated function, session state initialized twice, a missing `dataset_dir` argument, `panels_data` type handling, and a proposed `normalize_selected_panels()` helper to unify two sets of panel keys. |
-| [#95](https://github.com/nipoppy/qc-studio/pull/95) multifacet ratings | Saved ratings masked by all-`None` widgets, facet-name changes breaking saved matching, checkpoint lookup crossing raters and tasks, stale task navigation, filename and wildcard-path edge cases. Retested task switching and wrong-task checkpoints before approving. |
-| [#83](https://github.com/nipoppy/qc-studio/pull/83) saving and checkpoints | Filename and path inconsistencies, checkpoint confusion, altered leading-zero subject IDs, lost autoplay notes, page counts mislabeled as QC records. |
-| [#74](https://github.com/nipoppy/qc-studio/pull/74) filtering and navigation | Autoplay leaving the active filter and moving to hidden subjects; a fully reviewed cohort skipping the congratulations page. |
-| [#25](https://github.com/nipoppy/qc-studio/pull/25) pagination compatibility | Completed uploads sent back to page 1, stale Continue QC widgets, Start Over retaining records, silent duplicate handling, session assumptions, magic display constants. |
-| [#111](https://github.com/nipoppy/qc-studio/pull/111) memory optimization | Two caching styles in two modules; asymmetric invalidation, since the NIfTI key includes file mtime and size but the montage key does not, so a regenerated montage can stay stale; a shared cached dict read-only only by docstring. |
-| [#105](https://github.com/nipoppy/qc-studio/pull/105) documentation site | Verified a strict Sphinx build, demo startup, CLI flags, and export columns. README startup command missing required arguments, docs CI coupled to code tests, pre-commit scope reaching sample data, inconsistent saved-filename examples. |
-| [#10](https://github.com/nipoppy/qc-studio/pull/10), [#53](https://github.com/nipoppy/qc-studio/pull/53), [#58](https://github.com/nipoppy/qc-studio/pull/58) | Overlay colorbar stacking; shortcut conflicts with typing in notes and wrapped button labels; review duration measuring time since last rerun rather than actual review time. |
-| [#17](https://github.com/nipoppy/qc-studio/pull/17), [#38](https://github.com/nipoppy/qc-studio/pull/38), [#67](https://github.com/nipoppy/qc-studio/pull/67), [#96](https://github.com/nipoppy/qc-studio/pull/96) | Documentation, fixture, and citation PRs: reviewed and approved, or closed as superseded. |
+The ones worth naming are the quiet failures — the cases where the application
+would have carried on without an error. In multifacet ratings
+([#95](https://github.com/nipoppy/qc-studio/pull/95)) an all-`None` widget could overwrite and hide a rating already
+saved, facet renaming broke the match between saved values and the form, and
+checkpoint lookup could reach across to another rater's or task's file. In the
+filtering work ([#74](https://github.com/nipoppy/qc-studio/pull/74)) autoplay left the active filter and advanced
+into hidden subjects, and a fully reviewed cohort could skip the completion
+page. In the export and checkpoint work ([#83](https://github.com/nipoppy/qc-studio/pull/83)) subject IDs lost their
+leading zeros and page counts were labelled as QC records. In the memory
+optimization still open ([#111](https://github.com/nipoppy/qc-studio/pull/111)) the two caches invalidate
+differently — the NIfTI key includes file mtime and size, the montage key does
+not — so a regenerated montage can be served stale.
 
-Two related reports: [#101](https://github.com/nipoppy/qc-studio/issues/101)
-(Streamlit minimum version for `st.iframe`) and
-[#112](https://github.com/nipoppy/qc-studio/issues/112) (overwrite warning
-versus retained export rows, open).
-
-Reviewing #95 and #83 mattered on a schedule. Both changed the save, checkpoint,
+Reviewing #95 and #83 mattered on a schedule: both changed the save, checkpoint,
 and resume paths the PPMI sessions depended on, and #95 merged on October 8,
-after I retested task switching and wrong-task checkpoint uploads on October 6.
+after I retested task switching and wrong-task checkpoint uploads on the 6th.
+
+Two related reports came out of this work: [#101](https://github.com/nipoppy/qc-studio/issues/101) (the declared minimum
+Streamlit version predated the `st.iframe` call the code had started using) and
+[#112](https://github.com/nipoppy/qc-studio/issues/112) (the export warning says "overwritten" while the writer merges,
+open).
+
+Every review, with its findings and links to the comments, is listed in
+[Appendix C](GSoC_REPORT_APPENDIX.md#appendix-c-review-and-comment-activity-on-others-prs).
 
 ## 7. Upstream Niivue Contribution
 
