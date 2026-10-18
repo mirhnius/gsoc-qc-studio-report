@@ -188,43 +188,33 @@ records are in the [appendices](GSoC_REPORT_APPENDIX.md).
 
 ## How the Project Evolved
 
-Two developments during the project changed which of the three proposed
-deliverables mattered most.
+Two developments changed which of the three proposed deliverables mattered most.
 
 **Real users arrived.** New users were preparing to run QC on the PPMI dataset,
-which turned reliability from a quality concern into a blocking one. An AI
-summary panel on top of an application that could drop a reviewer's rating would
-not have been worth building. Rating persistence, navigation, filtering, saving,
-checkpoints, and notes all needed attention, and contributors were adding
-features in those same areas at the same time. Reviewing those PRs carefully
-became a priority in its own right, since a defect merged into the save or
-resume path would reach real raters working on a real dataset. That is why
-implementation, code review, regression testing, and browser-test infrastructure
-became the largest share of my work.
-
-Those sessions ran on October 7–9, 2026, and they went successfully. That is the
-clearest measure I have of whether this shift was the right one: the application
-held up for real raters on a real dataset. The timing also shows how close the
-margin was. I retested the multifacet ratings work on October 6, covering task
-switching and wrong-task checkpoint uploads, and that PR merged on October 8,
-in the middle of the QC window.
+which turned reliability from a quality concern into a blocking one — an AI
+panel on top of an application that could drop a rating would not have been
+worth building. Rating persistence, saving, filtering, checkpoints, and notes
+all needed attention, and other contributors were changing those same paths at
+the same time, so reviewing their PRs became a priority in its own right. Those
+sessions ran on October 7–9, 2026 and went successfully, which is the clearest
+measure I have that the shift was right. The margin was narrow: I retested the
+multifacet ratings work on October 6 and it merged on the 8th, mid-window.
 
 **The compute for open-weight models was not there.** The AI deliverable assumed
-I could experiment with open-weight models locally. In practice the
-infrastructure for that was not available: the models I could actually run on my
-laptop were too small for the task, and the larger ones would not run at all.
-Section 2 describes what this allowed and what it ruled out. The work therefore
-stopped at a sandbox, which is an honest finding about what this line of research
-needs rather than a result I could extend by trying harder.
+local experimentation with open-weight models. The models I could run on my
+laptop were too small for the task and the larger ones would not run at all, so
+the work stopped at a sandbox — a finding about what this line of research
+needs, rather than a result I could extend by trying harder. Section 2 describes
+what it allowed and what it ruled out.
 
 | Original goal | What I did | Where it stands |
 | --- | --- | --- |
-| Nipoppy-integrated architecture | **I did not build this.** That effort went into reliability instead, because that is what the project needed: reviewing 14 PRs on the save, resume, filtering, and navigation paths, catching defects before they reached raters, and filing 21 issues on what I found. | `DatasetLayout` and `manifest.tsv` integration remain open for a future contributor. Pagination was implemented by other contributors and is credited to them. |
-| IQM distributions and outlier detection | Merged IQM viewer with dataset distributions, scan-level tables, multiple sources, DWI support, and tests; reference-data infrastructure; metric highlighting in the evidence sandbox. | Dataset IQM panel is live. Reference comparison is built and will be re-enabled once reference data is cleaned (#82). Production outlier detection builds on the sandbox rules. |
-| AI summaries and evaluation | Structured evidence packages, model experiment scripts, response-schema validation, and findings on cloud and local models. | A working sandbox with documented findings. Blocked from going further by the lack of infrastructure for open-weight models; dashboard integration and a larger evaluation need that compute first. |
+| Nipoppy-integrated architecture | **I did not build this.** That effort went into reliability instead, because that is what the project needed: reviewing 14 PRs on the save, resume, filtering, and navigation paths, and filing 21 issues on what I found. | `DatasetLayout` and `manifest.tsv` integration remain open. Pagination was implemented by other contributors and is credited to them. |
+| IQM distributions and outlier detection | Merged IQM viewer: dataset distributions, scan-level tables, multiple metric sources, DWI support, tests, and reference-data infrastructure. | The panel is live. Reference comparison is built but disabled pending #82; production outlier detection remains future work. |
+| AI summaries and evaluation | Structured evidence packages, model experiment scripts, response-schema validation, and findings on cloud and local models. | A working sandbox with documented findings. Dashboard integration and a larger evaluation need compute first. |
 
-Work added beyond the original proposal: the autoplay persistence fix, CI and local
-checks, SVG caching, the draft Playwright framework, workflow reviews, and the
+Work added beyond the proposal: the autoplay persistence fix, CI and local
+checks, montage caching, the draft Playwright framework, the reviews, and the
 upstream Niivue report.
 
 ## 1. IQM Viewer
