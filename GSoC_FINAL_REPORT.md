@@ -4,7 +4,7 @@
 **Project:** [QC-Studio](https://github.com/nipoppy/qc-studio)  
 **Organization:** [INCF](https://www.incf.org/) (International Neuroinformatics
 Coordinating Facility)  
-**Contribution period:** April–October 2026 · **Status checked:** October 17, 2026
+**Status checked:** October 17, 2026
 
 ---
 
