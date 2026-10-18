@@ -247,6 +247,16 @@ shown as a metrics table instead. MRIQC-like sources use curated metric groups,
 and anything else falls back to per-column display, so an unfamiliar pipeline is
 degraded rather than unsupported.
 
+![The IQM panel during a DWI review, showing two metric-source tabs, grouped violin plots, and the current subject marked on each distribution](images/iqm-viewer.png)
+
+*The IQM panel reviewing `sub-CMH0001`, `ses-01`. The two tabs are the task's
+two configured metric sources — a group TSV and a per-subject JSON sidecar —
+each rendered in its own tab. Metrics are drawn in curated groups (BDIFFS,
+EFC_SHELLS, FA, FBER_SHELLS) as violins showing the distribution across the
+dataset, with the orange diamond marking where the scan under review falls, and
+one shared legend for the whole tab. The rating widget and autoplay controls
+sit alongside, so the decision is made on the same screen as the evidence.*
+
 **How it got there.** The first version supported only MRIQC, through a
 top-level setting that hardcoded modality groupings. Redesigning it around a
 per-task `iqm_path` list — mirroring the existing `svg_montage_path` pattern —
