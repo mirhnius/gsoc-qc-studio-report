@@ -6,6 +6,7 @@
 **Project:** [QC-Studio](https://github.com/nipoppy/qc-studio)  
 **Organization:** [INCF](https://www.incf.org/) (International Neuroinformatics
 Coordinating Facility)  
+**GSoC project page:** [summerofcode.withgoogle.com](https://summerofcode.withgoogle.com/programs/2026/projects/OkpWFPSn)  
 **Status checked:** October 17, 2026
 
 ---
@@ -571,12 +572,8 @@ was implemented by another contributor, it is credited to them throughout.
 
 ## Acknowledgements
 
-Thank you to my GSoC mentors for their guidance throughout this project, and
-especially to **Nikhil Bhagwat** (McGill University), whose review shaped much
-of the work described here — not least the IQM viewer, which became a per-task
-component rather than an MRIQC add-on because of his feedback. He also gave me
-room to work on what the project needed rather than only what my proposal
-listed, and trusted me with reviewing and merging other contributors' work.
+Thank you to my GSoC mentors, especially **Nikhil Bhagwat**, for their guidance
+throughout this project.
 
 Thank you to the QC-Studio contributors I worked alongside: Ghazaleh
 Mohammadalinejad, Thomas Tan, Michelle Wang, Patrick Sadil, Manon Heffernan,
