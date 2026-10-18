@@ -467,29 +467,17 @@ checks of real review sessions and focusing on whether ratings and notes survive
 navigation, filtering, saving, and resuming. Where possible I retested fixes
 before approving. The implementations are their authors'; these are my findings.
 
-The ones worth naming are the quiet failures — the cases where the application
-would have carried on without an error. In multifacet ratings
-([#95](https://github.com/nipoppy/qc-studio/pull/95)) an all-`None` widget could overwrite and hide a rating already
-saved, facet renaming broke the match between saved values and the form, and
-checkpoint lookup could reach across to another rater's or task's file. In the
-filtering work ([#74](https://github.com/nipoppy/qc-studio/pull/74)) autoplay left the active filter and advanced
-into hidden subjects, and a fully reviewed cohort could skip the completion
-page. In the export and checkpoint work ([#83](https://github.com/nipoppy/qc-studio/pull/83)) subject IDs lost their
-leading zeros and page counts were labelled as QC records. In the memory
-optimization still open ([#111](https://github.com/nipoppy/qc-studio/pull/111)) the two caches invalidate
-differently — the NIfTI key includes file mtime and size, the montage key does
-not — so a regenerated montage can be served stale.
+Most of what I caught were quiet failures — cases where the application would
+have carried on without an error, which is exactly what a reviewer working
+through a cohort would not notice.
 
-Reviewing #95 and #83 mattered on a schedule: both changed the save, checkpoint,
-and resume paths the PPMI sessions depended on, and #95 merged on October 8,
-after I retested task switching and wrong-task checkpoint uploads on the 6th.
+Two of those reviews mattered on a schedule: #95 and #83 both changed the save,
+checkpoint, and resume paths the PPMI sessions depended on, and #95 merged on
+October 8, after I retested task switching and wrong-task checkpoint uploads on
+the 6th.
 
-Two related reports came out of this work: [#101](https://github.com/nipoppy/qc-studio/issues/101) (the declared minimum
-Streamlit version predated the `st.iframe` call the code had started using) and
-[#112](https://github.com/nipoppy/qc-studio/issues/112) (the export warning says "overwritten" while the writer merges,
-open).
-
-Every review, with its findings and links to the comments, is listed in
+**For the details** — every review, what I found in it, and links to the
+comments — see
 [Appendix C](GSoC_REPORT_APPENDIX.md#appendix-c-review-and-comment-activity-on-others-prs).
 
 ## 7. Upstream Niivue Contribution
