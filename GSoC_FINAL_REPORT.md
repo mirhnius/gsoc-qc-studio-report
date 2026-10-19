@@ -95,8 +95,9 @@ rated, against which task, by which rater, and with what notes. The project's
 own framing is that neuroimagers should be able to *QC anything, anywhere, all
 at once*.
 
-A review session moves through the application like this, with the parts my
-work touched outlined:
+A review session moves through the application like this, with the parts I
+built or fixed outlined; I reviewed the save and export path rather than
+writing it:
 
 ```mermaid
 flowchart LR
@@ -108,7 +109,7 @@ flowchart LR
   D --> X["Checkpoint · export TSV"]
   D -. "autoplay advances" .-> Q
   classDef mine stroke:#1f6feb,stroke-width:3px;
-  class I,M,D,X mine
+  class I,M,D mine
 ```
 
 The application's stated goals are to visualize raw and processed neuroimaging
@@ -485,8 +486,9 @@ effect on autoplay and on slow readiness checks in browser tests. A maintainer
 confirmed on September 29 that support was implemented in master and planned for
 the next beta
 ([response](https://github.com/niivue/niivue-vscode/issues/314#issuecomment-5885125915)).
-The maintainer implemented the change; adopting it in QC-Studio is a separate
-step.
+The maintainer implemented the change; adopting it in QC-Studio is tracked
+separately in [#107](https://github.com/nipoppy/qc-studio/issues/107), which
+bumps the `niivue-streamlit` dependency to a version carrying the new events.
 
 ## What I Learned
 
@@ -521,7 +523,7 @@ step.
 | Montage task/run metadata, #61 (draft) | Finish it or document what remains. |
 | Documentation website, #105 | Follow up on startup instructions, docs CI, sample-data hook scope, filename consistency. |
 | Export semantics, #112 | Clarify merge versus replace and align the warning. |
-| Niivue loading events | Verify release availability and use the events for timing and tests. |
+| Niivue loading events, #107 | Bump `niivue-streamlit` to a release carrying the events, then use them for autoplay timing and test readiness. |
 | Evidence-bundle experiments, #24 / #40 | Expert-review metric context, improve reference data, define a larger evaluation. |
 
 Beyond these, the proposal's full Nipoppy layout and manifest integration,
