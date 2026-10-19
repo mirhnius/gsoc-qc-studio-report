@@ -41,8 +41,6 @@ Coordinating Facility)
 **Handoff**
 
 - [What I Learned](#what-i-learned) — what the work taught me
-- [Where This Leaves QC-Studio](#where-this-leaves-qc-studio) — what it adds
-  up to
 - [Next Steps](#next-steps) — open work, with entry points
 - [About This Report](#about-this-report) — how the records were checked
 
@@ -162,8 +160,9 @@ share of the code other contributors added.
 - **Features and fixes merged:** the IQM viewer (#22), the fix for ratings lost
   during autoplay (#76), SVG montage caching (#62), basic CI checks (#39), and
   terminology and documentation fixes (#34, #66).
-- **Testing infrastructure:** a Playwright framework with 11 behavior
-  specifications and six working tests, in an open draft PR (#88).
+- **Testing infrastructure:** a Playwright suite covering 13 specifications
+  with 19 tests, plus an opt-in CI workflow running them in two browsers
+  (#88, open for review).
 - **Research:** an evidence-bundle sandbox that packages MRI QC evidence for
   LLMs, with cloud and local model experiments and documented findings.
 - **Code review:** 14 PRs by other contributors, including detailed reviews of
@@ -182,7 +181,7 @@ share of the code other contributors added.
 
 | Activity | Count (October 17, 2026) |
 | --- | --- |
-| PRs authored | 9: 6 merged, 2 open drafts, 1 closed prototype |
+| PRs authored | 9: 6 merged, 1 open for review, 1 open draft, 1 closed prototype |
 | Issues created in QC-Studio | 21: 9 closed, 12 open |
 | PRs reviewed or commented on | 14 |
 | PRs merged / closed without merge under my account | 7 / 5 |
@@ -221,7 +220,7 @@ what it allowed and what it ruled out.
 | AI summaries and evaluation | Structured evidence packages, model experiment scripts, response-schema validation, and findings on cloud and local models. | A working sandbox with documented findings. Dashboard integration and a larger evaluation need compute first. |
 
 Work added beyond the proposal: the autoplay persistence fix, CI and local
-checks, montage caching, the draft Playwright framework, the reviews, and the
+checks, montage caching, the Playwright suite, the reviews, and the
 upstream Niivue report.
 
 ## 1. IQM Viewer
@@ -334,56 +333,59 @@ where to start if you are picking this work up.
 
 ## 3. Playwright Browser Testing
 
-**Open draft:** [PR #88](https://github.com/nipoppy/qc-studio/pull/88), from
-[#75](https://github.com/nipoppy/qc-studio/issues/75).
+**Open for review:** [PR #88](https://github.com/nipoppy/qc-studio/pull/88),
+from [#75](https://github.com/nipoppy/qc-studio/issues/75).
 
 Three bugs I had worked on (#73, #81, #84) shared a shape: the logic was correct
 in isolation, and the failure lived in the wiring between real widgets, session
 state, and Streamlit's rerun cycle. `ui/tests/` mocks Streamlit out, so by
-construction it cannot see that class of bug. We needed end-to-end tests that
-run automatically, and I argued that in #75 before writing any.
+construction it cannot see that class of bug. I argued for a browser layer in
+#75 before writing any of it.
 
 Playwright was new to me, so instead of inventing a structure I studied how
-Streamlit's own `e2e_playwright` suite is organised — particularly how it stops
-tests breaking when Streamlit's internals change, by wrapping the fragile parts
-so there is one place to fix rather than many. The suite has four layers, each
-hiding its mechanics from the one above: a fixture that launches the real app, a
-fixture that hands over a loaded page, a shared layer owning every selector and
-every rerun wait, and the tests themselves, which know about none of it.
+Streamlit's own `e2e_playwright` suite is organised — particularly how it keeps
+tests from breaking when Streamlit's internals change, by wrapping the fragile
+parts so there is one place to fix rather than many. The suite has four layers:
+a fixture that launches the real app, a fixture that hands over a loaded page, a
+shared layer owning every selector and every rerun wait, and the tests, which
+know about none of it. Getting the waits right is the hard part, because a
+negative assertion can pass against a stale render — a green test over a shipped
+bug.
 
-```mermaid
-flowchart TD
-  T["tests/<br/>scenarios, which know about none of the below"] --> S
-  S["shared/<br/>every selector · every rerun wait"] --> A
-  A["app fixture<br/>a page already loaded and settled"] --> V
-  V["app_server fixture<br/>a real QC-Studio process on a free port"]
-```
+Each test starts as a Markdown specification, which makes the expected behavior
+reviewable before any code exists. It covers 13 specifications with 19 tests
+across 10 files: rater-form validation, ratings surviving navigation, upload and
+resume, the export overwrite guard, checkpoints, notes, autoplay, multi-task
+rating, and the subject list.
 
-The hard part is synchronization, because Streamlit reruns the whole script on
-every interaction and a negative assertion can pass against the stale render —
-a green test over a shipped bug. The waits ask the app for its script state
-rather than guessing with timeouts.
+**It runs in CI on request** — by pressing Run workflow, or by adding a
+`run-e2e` label to a pull request so the result reports on the PR under review.
+Deliberately not on every push: a real server and two browsers cost minutes, and
+most changes cannot break it. Failures upload screenshots and video, because the
+point of CI is seeing what broke on a machine you cannot open a browser on.
 
-I was also curious about spec-driven development, and this is the concept rather
-than the full method. A contributor fills in a Markdown spec with the scenario
-and what matters about it, hands it to their AI assistant to review and improve,
-lets it implement the test, then runs it themselves and judges whether it does
-what they wanted. The spec makes expected behavior reviewable while
-disagreements are still cheap, and the human stays the one who decides the test
-is right. For that to work across contributors there has to be shared agreement,
-so the branch commits skills for writing tests and reviewing code — committed
-rather than local, so everyone's assistant behaves the same way.
+**The suite found real problems**, recorded in
+[`e2e/FINDINGS.md`](https://github.com/nipoppy/qc-studio/blob/e2e/e2e/FINDINGS.md)
+as product questions rather than test failures. The clearest: the Next tooltip
+tells a rater to set a rating for every task before continuing, and nothing
+enforces it — rate one of three tasks, press Next, and the untouched ones never
+reach the export, where they are indistinguishable from tasks nobody looked at.
+Two findings are pinned by `xfail(strict=True)`, so CI stays green while the
+test fails loudly the moment the behavior changes. These are not defects a
+mocked test could have found.
 
-The 11 specifications cover the risky paths; six scenarios are implemented, two
-of them the browser-level versions of #84 and #72. Next: tighten the rerun
-waits, track overwritten exports, and implement the save/resume specs.
+It also exposed an environment problem: `requirements.txt` asks only for
+`streamlit>=1.56`, and a local 1.58 against a CI 1.65 rendered radio widgets
+differently, failing sixteen tests that passed locally. I fixed the suite side
+by locating widgets through their ARIA role and accessible name rather than the
+component library's internals — which is what the shared selector layer is for.
+The unpinned dependency remains.
 
 This section is a summary. The four layers, the synchronization problem, the
-selector strategy and the Streamlit quirks it absorbs, the specification
-template, and the shared conventions are documented in full in
+selector strategy, the specification template, and the shared conventions are
+documented in full in
 **[Playwright E2E Branch](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md)**, which is
 where to start if you are picking this work up.
-
 
 ## 4. Rating Persistence and Test Coverage
 
@@ -519,37 +521,11 @@ step.
   navigation behavior in
   [issue #89](https://github.com/nipoppy/qc-studio/issues/89#issuecomment-5674629745).
 
-## Where This Leaves QC-Studio
-
-The value of a tool like this rests on one thing: that the record it produces
-can be trusted and read back later. A QC decision is only useful if it is still
-there afterwards, attached to the right participant and task, attributable to
-the rater who made it. That is what makes QC auditable rather than folklore.
-
-Most of my work went into that property. The IQM viewer puts the measurements
-next to the images so a decision is made on the evidence rather than on
-impression alone. The autoplay fix means a rating a reviewer made is a rating
-that was saved. The review work on saving, checkpoints, filenames, and
-multifacet ratings was about records staying attached to the right subject,
-task, and rater through navigation, resuming, and export. The browser tests
-exist because that whole path crosses the seam a mocked test cannot see.
-
-Those are not separate strands. A tool that silently drops a rating does not
-have a reliability problem on top of its purpose — it has lost its purpose. The
-clearest evidence that this mattered is that new users ran QC on the PPMI
-dataset on October 7–9 and it held.
-
-What remains is also clear. The reference comparison needs data that can be
-trusted before it returns (#82). The browser suite needs its remaining
-high-value workflows (#88). The evidence-bundle work needs compute before it can
-be evaluated honestly. Each is written up with enough detail for someone else to
-pick up.
-
 ## Next Steps
 
 | Work | Next step |
 | --- | --- |
-| Playwright framework, #88 / #75 | Resolve synchronization and export-tracking feedback, validate the tests, add save/resume scenarios. |
+| Playwright suite, #88 / #75 | Open for review. Decide the scope of the committed agent skills, and act on the product questions in `e2e/FINDINGS.md`. |
 | IQM reference distributions, #82 | Clean and validate reference data before restoring the comparison control. |
 | IQM/autoplay interaction, #77 | Investigate rendering and automatic advance with realistic matching inputs. |
 | Montage task/run metadata, #61 (draft) | Finish it or document what remains. |

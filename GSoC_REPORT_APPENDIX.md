@@ -21,7 +21,7 @@ created issues and issues closed under my account are different categories.
 | [#62](https://github.com/nipoppy/qc-studio/pull/62) | SVG montage loading cache. | `cache-svg-data` | Merged |
 | [#66](https://github.com/nipoppy/qc-studio/pull/66) | Broken documentation-link repairs. | `fix-links-md` | Merged |
 | [#76](https://github.com/nipoppy/qc-studio/pull/76) | Immediate rating persistence near autoplay advance, guards, and regression tests. | `fix-73-play-mode-rating-persistence` | Merged |
-| [#88](https://github.com/nipoppy/qc-studio/pull/88) | Browser-test harness, behavior specifications, workflow tests, and agent guidance. | `e2e` | Open draft |
+| [#88](https://github.com/nipoppy/qc-studio/pull/88) | Browser-test harness, 13 specifications, 19 tests, an opt-in CI workflow, and agent guidance. | `e2e` | Open for review |
 
 PRs #36, #37, and #38 were authored by the Copilot agent. My work on them is
 recorded under review and maintenance below.
@@ -43,7 +43,7 @@ recorded under review and maintenance below.
 | [#71](https://github.com/nipoppy/qc-studio/issues/71) | Reported inconsistent visibility of pass/fail controls. | Open |
 | [#72](https://github.com/nipoppy/qc-studio/issues/72) | Reported autoplay scrolling and loading time consuming review time. | Open |
 | [#73](https://github.com/nipoppy/qc-studio/issues/73) | Reported lost autoplay ratings and implemented #76. | Closed |
-| [#75](https://github.com/nipoppy/qc-studio/issues/75) | Proposed separately run browser tests; opened draft #88. | Open |
+| [#75](https://github.com/nipoppy/qc-studio/issues/75) | Proposed separately run browser tests; implemented in #88. | Open |
 | [#77](https://github.com/nipoppy/qc-studio/issues/77) | Reported IQM rendering problems during automatic advance. | Open |
 | [#78](https://github.com/nipoppy/qc-studio/issues/78) | Reported autoplay continuing after returning to the landing page. | Open |
 | [#81](https://github.com/nipoppy/qc-studio/issues/81) | Reported loss of partial progress and reviewed the save/checkpoint response. | Closed |
@@ -142,7 +142,7 @@ to the PRs' authors; the right-hand column is what I found or did.
 - [IQM implementation branch](https://github.com/nipoppy/qc-studio/tree/iqm-viewer-fixes):
   feature development associated with merged PR #22.
 - [E2E branch](https://github.com/nipoppy/qc-studio/tree/e2e): current browser-test
-  work associated with draft PR #88.
+  work associated with PR #88.
 - [Evidence-bundle branch](https://github.com/nipoppy/qc-studio/tree/evidence_bundle):
   sandbox code and recorded experiment artifacts; published tip
   `57c6ca8928db9949508b5c057cf929fa7a7915c1` at verification.
