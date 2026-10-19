@@ -528,14 +528,6 @@ Beyond these, the proposal's full Nipoppy layout and manifest integration,
 production outlier detection, AI-summary dashboard panel, and workflow-impact
 evaluation are natural follow-ons to the IQM viewer and evidence-bundle work.
 
-## About This Report
-
-Counts and status are as of October 17, 2026, checked against the repository's
-PR, issue, review, merge, and closure history. The original proposal summary,
-the PPMI onboarding and its outcome, and the hardware limits on open-weight
-model experiments come from my own records rather than that history. Where a fix
-was implemented by another contributor, it is credited to them throughout.
-
 ## Acknowledgements
 
 Thank you to my GSoC mentors, especially Nikhil Bhagwat, for their guidance
