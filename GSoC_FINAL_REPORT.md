@@ -364,15 +364,14 @@ Deliberately not on every push: a real server and two browsers cost minutes, and
 most changes cannot break it. Failures upload screenshots and video, because the
 point of CI is seeing what broke on a machine you cannot open a browser on.
 
-**The suite found real problems**, recorded in
-[`e2e/FINDINGS.md`](https://github.com/nipoppy/qc-studio/blob/e2e/e2e/FINDINGS.md)
-as product questions rather than test failures. The clearest: the Next tooltip
-tells a rater to set a rating for every task before continuing, and nothing
-enforces it — rate one of three tasks, press Next, and the untouched ones never
-reach the export, where they are indistinguishable from tasks nobody looked at.
-Two findings are pinned by `xfail(strict=True)`, so CI stays green while the
-test fails loudly the moment the behavior changes. These are not defects a
-mocked test could have found.
+**The suite earned its keep immediately.** Writing the tests surfaced
+behaviour no mocked test could have reached — the clearest being that the Next
+tooltip tells a rater to set a rating for every task before continuing while
+nothing enforces it, so the untouched tasks never reach the export. These are
+product questions rather than test failures, so they are written up on the
+branch for whoever owns the behaviour to decide, and the two sharpest are
+pinned by `xfail(strict=True)` tests: CI stays green, and the test fails loudly
+the moment the behaviour changes.
 
 It also exposed an environment problem: `requirements.txt` asks only for
 `streamlit>=1.56`, and a local 1.58 against a CI 1.65 rendered radio widgets
