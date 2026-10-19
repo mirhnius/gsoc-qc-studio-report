@@ -150,5 +150,6 @@ to the PRs' authors; the right-hand column is what I found or did.
 - [Playwright explanation](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md).
 - [Evidence-bundle explanation](EVIDENCE_BUNDLE_BRANCH_EXPLANATION.md).
 
-How this inventory was checked is described in
-[About This Report](GSoC_FINAL_REPORT.md#about-this-report).
+This inventory was checked against the repository's PR, issue, review, merge,
+and closure history as of October 17, 2026. Where a fix was implemented by
+another contributor, it is credited to them.

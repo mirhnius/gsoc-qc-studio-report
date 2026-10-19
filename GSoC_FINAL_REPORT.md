@@ -42,7 +42,6 @@ Coordinating Facility)
 
 - [What I Learned](#what-i-learned) — what the work taught me
 - [Next Steps](#next-steps) — open work, with entry points
-- [About This Report](#about-this-report) — how the records were checked
 
 Full records of every PR, issue, review, merge, and closure are in the
 [appendices](GSoC_REPORT_APPENDIX.md). To run QC-Studio yourself, the
