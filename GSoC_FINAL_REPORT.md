@@ -336,72 +336,46 @@ where to start if you are picking this work up.
 **Open for review:** [PR #88](https://github.com/nipoppy/qc-studio/pull/88),
 from [#75](https://github.com/nipoppy/qc-studio/issues/75).
 
-**Why a browser layer at all.** Three bugs I had worked on (#73, #81, #84)
-shared a shape: the logic was correct in isolation, and the failure lived in the
-wiring between real widgets, session state, and Streamlit's rerun cycle.
-`ui/tests/` mocks Streamlit out, so by construction it cannot see that class of
-bug — no amount of additional unit testing would have caught them. I made that
-argument in #75 before writing any code.
+**Why a browser layer.** Three bugs I had worked on (#73, #81, #84) shared a
+shape: the logic was correct in isolation, and the failure lived in the wiring
+between real widgets, session state, and Streamlit's rerun cycle. `ui/tests/`
+mocks Streamlit out, so no amount of extra unit testing could have caught them.
 
 **Why this structure.** Playwright was new to me, so rather than invent a layout
-I studied how Streamlit's own `e2e_playwright` suite is organised — specifically
-how it survives Streamlit changing its internals, which is by wrapping the
-fragile parts so there is one place to fix rather than many. I copied that
-principle into four layers: a fixture that launches the real app, a fixture that
-hands over a loaded page, a shared layer owning every selector and every rerun
-wait, and the tests, which know about none of it. A test therefore describes a
-rater's journey and nothing about Streamlit's DOM.
+I studied how Streamlit's own suite survives Streamlit changing its internals —
+by wrapping the fragile parts so there is one place to fix rather than many. The
+suite has four layers, and a test describes a rater's journey while knowing
+nothing about the DOM. That paid off when a local Streamlit 1.58 against a CI
+1.65 broke sixteen passing tests: every selector lived in one module, so the fix
+touched one file and no test bodies.
 
-That decision was vindicated sooner than expected. `requirements.txt` asks only
-for `streamlit>=1.56`, and a local 1.58 against a CI 1.65 rendered radio widgets
-differently, failing sixteen tests that had passed locally. Because every
-selector lived in one module, the fix — locating widgets through their ARIA role
-and accessible name instead of the component library's internals — touched one
-file and no test bodies.
+**Why specifications first.** Each test begins as a Markdown spec, which makes
+the expected behaviour reviewable while disagreements are still cheap, rather
+than after a test has been written against the wrong idea. 13 specifications and
+19 tests now span the paths a lost rating would travel: form validation,
+navigation, upload and resume, checkpoints, the export overwrite guard, notes,
+autoplay, and multi-task rating.
 
-**Why specifications come first.** Each test begins as a Markdown spec
-describing the scenario and what should be observable afterwards. Writing it
-first makes the expected behaviour reviewable while disagreements are still
-cheap to settle, rather than after a test has been written against the wrong
-idea. The suite now covers 13 specifications with 19 tests across 10 files,
-spanning the paths a lost rating would travel: form validation, navigation,
-upload and resume, checkpoints, the export overwrite guard, notes, autoplay, and
-multi-task rating.
+**Why the skills are committed.** Contributors increasingly write tests with an
+AI assistant, and left alone each one invents its own conventions until the
+suite drifts apart from the inside. Committing the skills means anyone working
+on the repository gets the same behaviour — the only way shared conventions hold
+across contributors who never meet.
 
-**Why the agent skills are committed.** The spec-first loop only works if
-everyone follows it, and contributors increasingly write tests with an AI
-assistant. Left to itself, each assistant invents its own conventions — its own
-selector habits, its own idea of what an assertion should check — and the suite
-drifts apart from the inside. So the conventions are committed to the branch as
-skills, covering this suite's architecture, Playwright usage, code review, and
-test generation. Anyone working on the repository with an assistant gets the
-same behaviour, which is the only way shared conventions hold across
-contributors who never meet. Personal settings are deliberately left
-uncommitted, since a permission allowlist belongs to a machine, not a project.
+**Why CI runs on request.** A real server and two browsers cost minutes, and
+most changes cannot break these tests, so gating every commit would buy little
+and slow everyone down. The workflow is triggered deliberately, usually by
+adding a `run-e2e` label to a pull request so the result reports where a
+reviewer will see it.
 
-**Why CI runs on request, not on every push.** Starting a real server and
-driving two browsers costs minutes rather than seconds, and most changes cannot
-break these tests, so gating every commit on them would buy little and slow
-everyone down. Instead the workflow is triggered deliberately: by pressing Run
-workflow, or by adding a `run-e2e` label to a pull request, which is the useful
-case — a PR touching the UI gets the run reported on itself, where a reviewer
-will see it. Failures upload screenshots and video, since the point of CI here
-is seeing what broke on a machine you cannot open a browser on.
+**It earned its keep immediately.** The tests surfaced behaviour no mocked test
+could reach — the clearest being that the Next tooltip tells a rater to set a
+rating for every task before continuing while nothing enforces it, so untouched
+tasks never reach the export. The two sharpest are pinned by `xfail(strict=True)`
+tests, so CI stays green while the test fails loudly the moment the behaviour
+changes.
 
-**The suite earned its keep immediately.** Writing the tests surfaced behaviour
-no mocked test could have reached — the clearest being that the Next tooltip
-tells a rater to set a rating for every task before continuing while nothing
-enforces it, so the untouched tasks never reach the export. These are product
-questions rather than test failures, so they are written up on the branch for
-whoever owns the behaviour to decide, and the two sharpest are pinned by
-`xfail(strict=True)` tests: CI stays green, and the test fails loudly the moment
-the behaviour changes.
-
-This section is a summary. The four layers, the synchronization problem, the
-selector strategy, the specification template, and the shared conventions are
-documented in full in
-**[Playwright E2E Branch](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md)**, which is
-where to start if you are picking this work up.
+Full detail: **[Playwright E2E Branch](PLAYWRIGHT_E2E_BRANCH_EXPLANATION.md)**.
 
 ## 4. Rating Persistence and Test Coverage
 
